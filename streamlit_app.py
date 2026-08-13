@@ -17,7 +17,7 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from hashlib import sha256
 from pathlib import Path
-from typing import Any, TypeGuard
+from typing import Any, TypeGuard, cast
 from zipfile import is_zipfile
 
 import streamlit as st
@@ -38,6 +38,11 @@ MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 MAX_PREVIEW_ROWS = 100
 PROJECT_ROOT = Path(__file__).resolve().parent
 BLIND_RESULT_PATH = PROJECT_ROOT / "docs" / "blind_evaluation_15a74a6.json"
+
+# Categorical chart hues, validated for chroma, surface contrast, and
+# colour-vision-deficiency separation in both light and dark surfaces.
+SERIES_PRECISION = "#2a78d6"
+SERIES_RECALL = "#eb6834"
 
 DETECTION_METHODS = {
     PIIType.PERSON: "local spaCy NER + role context",
@@ -598,14 +603,35 @@ def _render_verification(result: RedactionResult) -> None:
         st.json(report)
 
 
-def load_blind_evaluation() -> dict[str, Any]:
-    """Load the immutable, scored-once evaluation artifact shipped with the app."""
+def load_blind_evaluation() -> dict[str, Any] | None:
+    """Load the immutable, scored-once evaluation artifact shipped with the app.
 
-    return json.loads(BLIND_RESULT_PATH.read_text(encoding="utf-8"))
+    Returns ``None`` when the artifact is absent so a deployment that omits it
+    degrades to a message rather than crashing the tab.
+    """
+
+    try:
+        return cast(
+            dict[str, Any],
+            json.loads(BLIND_RESULT_PATH.read_text(encoding="utf-8")),
+        )
+    except (OSError, ValueError):
+        return None
 
 
 def _render_evaluation() -> None:
     result = load_blind_evaluation()
+    if result is None:
+        st.warning(
+            "The evaluation artifact was not packaged with this deployment. "
+            "Measured metrics are in the evaluation report linked below."
+        )
+        st.markdown(
+            "[Read the full evaluation report]"
+            "(https://github.com/meghanadh05/pii-redaction-tool/blob/main/"
+            "docs/evaluation_report.md)"
+        )
+        return
     exact = result["metrics"]["exact"]
     micro = exact["micro"]
     st.subheader("Measured model performance")
@@ -648,7 +674,9 @@ def _render_evaluation() -> None:
         x="PII type",
         y=["Precision", "Recall"],
         horizontal=True,
-        color=["#087f78", "#e28b3d"],
+        # Validated categorical slots 1 and 2: both clear the chroma floor,
+        # 3:1 surface contrast, and colour-vision-deficiency separation.
+        color=[SERIES_PRECISION, SERIES_RECALL],
     )
     relaxed = result["metrics"]["address_relaxed"]
     st.caption(
