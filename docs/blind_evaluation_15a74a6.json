@@ -1,0 +1,170 @@
+{
+  "dataset_role": "blind_final_evaluation_single_run",
+  "document_sha256": "8b5c93f7642d659e64b51be9f6172c86c2825417f376ca1800ed331515e6f929",
+  "error_analysis": {
+    "false_negatives_by_type": {
+      "ADDRESS": 9,
+      "COMPANY": 13,
+      "PERSON": 5
+    },
+    "false_positives_by_type": {
+      "ADDRESS": 12,
+      "COMPANY": 18,
+      "PERSON": 38
+    }
+  },
+  "extraction_version": "1.0",
+  "interpretation_limits": "Labels for this dataset were written after the recognizers were frozen and have never informed a repair, so these are held-out results. The sample is risk-stratified rather than uniformly sampled, so it is not an unbiased prevalence estimate for every paragraph. The annotator had prior exposure to the recognizer implementation, so COMPANY and ADDRESS boundary conventions may be biased toward the detector; exact and relaxed ADDRESS results are both reported so that effect stays visible.",
+  "local_nlp": {
+    "model_name": "en_core_web_sm",
+    "model_version": "3.8.0",
+    "spacy": "3.8.15"
+  },
+  "metrics": {
+    "address_relaxed": {
+      "entity_detection_accuracy": 0.7096774193548387,
+      "f1": 0.830188679245283,
+      "fn": 3,
+      "fp": 6,
+      "precision": 0.7857142857142857,
+      "recall": 0.88,
+      "tp": 22
+    },
+    "exact": {
+      "by_type": {
+        "ADDRESS": {
+          "entity_detection_accuracy": 0.43243243243243246,
+          "f1": 0.6037735849056605,
+          "fn": 9,
+          "fp": 12,
+          "precision": 0.5714285714285714,
+          "recall": 0.64,
+          "tp": 16
+        },
+        "COMPANY": {
+          "entity_detection_accuracy": 0.7102803738317757,
+          "f1": 0.8306010928961749,
+          "fn": 13,
+          "fp": 18,
+          "precision": 0.8085106382978723,
+          "recall": 0.8539325842696629,
+          "tp": 76
+        },
+        "CREDIT_CARD": {
+          "entity_detection_accuracy": null,
+          "f1": 0.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "DOB": {
+          "entity_detection_accuracy": null,
+          "f1": 0.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "EMAIL": {
+          "entity_detection_accuracy": 1.0,
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 18
+        },
+        "IP_ADDRESS": {
+          "entity_detection_accuracy": null,
+          "f1": 0.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "PERSON": {
+          "entity_detection_accuracy": 0.17307692307692307,
+          "f1": 0.29508196721311475,
+          "fn": 5,
+          "fp": 38,
+          "precision": 0.19148936170212766,
+          "recall": 0.6428571428571429,
+          "tp": 9
+        },
+        "PHONE": {
+          "entity_detection_accuracy": 1.0,
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 22
+        },
+        "SSN": {
+          "entity_detection_accuracy": null,
+          "f1": 0.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        }
+      },
+      "macro_ground_truth_types": {
+        "entity_detection_accuracy": 0.6631579458682262,
+        "f1": 0.74589132900299,
+        "included_type_count": 5,
+        "precision": 0.7142857142857142,
+        "recall": 0.8273579454253612
+      },
+      "micro": {
+        "entity_detection_accuracy": 0.597457627118644,
+        "f1": 0.7480106100795756,
+        "fn": 27,
+        "fp": 68,
+        "precision": 0.6746411483253588,
+        "recall": 0.8392857142857143,
+        "tp": 141
+      }
+    },
+    "matching_policy": {
+      "accuracy_definition": "entity_set_jaccard_tp_over_tp_fp_fn",
+      "address_relaxed": "one_to_one_intersection_over_shorter_span",
+      "address_relaxed_minimum_overlap": 0.5,
+      "primary": "exact_container_type_span"
+    }
+  },
+  "prediction_count": 209,
+  "privacy_safe": true,
+  "recognizer_commit": "15a74a6",
+  "report_schema_version": "1.0",
+  "sample": {
+    "annotation_count": 168,
+    "annotations_by_type": {
+      "ADDRESS": 25,
+      "COMPANY": 89,
+      "CREDIT_CARD": 0,
+      "DOB": 0,
+      "EMAIL": 18,
+      "IP_ADDRESS": 0,
+      "PERSON": 14,
+      "PHONE": 22,
+      "SSN": 0
+    },
+    "containers_by_stratum": {
+      "address_variant": 25,
+      "capitalized_heading_negative": 15,
+      "company_legal_prose": 40,
+      "contact_structured": 20,
+      "financial_legal_negative": 25,
+      "general_unlabelled_candidate": 5,
+      "management_person": 35,
+      "textbox": 15
+    },
+    "reviewed_container_count": 180
+  }
+}
