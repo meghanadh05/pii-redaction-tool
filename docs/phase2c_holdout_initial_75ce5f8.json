@@ -1,0 +1,167 @@
+{
+  "dataset_role": "independent_holdout_initial_untouched",
+  "document_sha256": "8b5c93f7642d659e64b51be9f6172c86c2825417f376ca1800ed331515e6f929",
+  "error_analysis": {
+    "false_negatives_by_type": {
+      "ADDRESS": 10,
+      "COMPANY": 8,
+      "PERSON": 13
+    },
+    "false_positives_by_type": {
+      "ADDRESS": 1,
+      "COMPANY": 48,
+      "PERSON": 10
+    }
+  },
+  "extraction_version": "1.0",
+  "holdout_snapshot_commit": "bc1fe79",
+  "immutable_result_name": "phase2c_holdout_initial_75ce5f8",
+  "interpretation_limits": "This is the first untouched result on a risk-stratified independent holdout. The selection deliberately over-samples known high-risk strata, so its aggregate is not an unbiased estimate of naturally occurring full-document prevalence. No thresholds or recognizer rules were changed after viewing it.",
+  "metrics": {
+    "address_relaxed": {
+      "entity_detection_accuracy": 0.5263157894736842,
+      "f1": 0.6896551724137931,
+      "fn": 9,
+      "fp": 0,
+      "precision": 1.0,
+      "recall": 0.5263157894736842,
+      "tp": 10
+    },
+    "exact": {
+      "by_type": {
+        "ADDRESS": {
+          "entity_detection_accuracy": 0.45,
+          "f1": 0.6206896551724138,
+          "fn": 10,
+          "fp": 1,
+          "precision": 0.9,
+          "recall": 0.47368421052631576,
+          "tp": 9
+        },
+        "COMPANY": {
+          "entity_detection_accuracy": 0.2222222222222222,
+          "f1": 0.36363636363636365,
+          "fn": 8,
+          "fp": 48,
+          "precision": 0.25,
+          "recall": 0.6666666666666666,
+          "tp": 16
+        },
+        "CREDIT_CARD": {
+          "entity_detection_accuracy": null,
+          "f1": 0.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "DOB": {
+          "entity_detection_accuracy": null,
+          "f1": 0.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "EMAIL": {
+          "entity_detection_accuracy": 1.0,
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 19
+        },
+        "IP_ADDRESS": {
+          "entity_detection_accuracy": null,
+          "f1": 0.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "PERSON": {
+          "entity_detection_accuracy": 0.4772727272727273,
+          "f1": 0.6461538461538462,
+          "fn": 13,
+          "fp": 10,
+          "precision": 0.6774193548387096,
+          "recall": 0.6176470588235294,
+          "tp": 21
+        },
+        "PHONE": {
+          "entity_detection_accuracy": 1.0,
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 5
+        },
+        "SSN": {
+          "entity_detection_accuracy": null,
+          "f1": 0.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        }
+      },
+      "macro_ground_truth_types": {
+        "entity_detection_accuracy": 0.62989898989899,
+        "f1": 0.7260959729925247,
+        "included_type_count": 5,
+        "precision": 0.7654838709677418,
+        "recall": 0.7515995872033023
+      },
+      "micro": {
+        "entity_detection_accuracy": 0.4375,
+        "f1": 0.6086956521739131,
+        "fn": 31,
+        "fp": 59,
+        "precision": 0.5426356589147286,
+        "recall": 0.693069306930693,
+        "tp": 70
+      }
+    },
+    "matching_policy": {
+      "accuracy_definition": "entity_set_jaccard_tp_over_tp_fp_fn",
+      "address_relaxed": "one_to_one_intersection_over_shorter_span",
+      "address_relaxed_minimum_overlap": 0.5,
+      "primary": "exact_container_type_span"
+    }
+  },
+  "prediction_count": 129,
+  "privacy_safe": true,
+  "recognizer_snapshot_commit": "75ce5f8",
+  "report_schema_version": "1.0",
+  "sample": {
+    "annotation_count": 101,
+    "annotations_by_type": {
+      "ADDRESS": 19,
+      "COMPANY": 24,
+      "CREDIT_CARD": 0,
+      "DOB": 0,
+      "EMAIL": 19,
+      "IP_ADDRESS": 0,
+      "PERSON": 34,
+      "PHONE": 5,
+      "SSN": 0
+    },
+    "containers_by_stratum": {
+      "address_variant": 15,
+      "capitalized_heading": 8,
+      "company_heavy": 40,
+      "contact_structured": 15,
+      "financial_legal_negative": 15,
+      "management_person": 20,
+      "textbox": 7
+    },
+    "reviewed_container_count": 120
+  },
+  "write_policy": "append-only result; do not overwrite with later post-fix evaluations"
+}
