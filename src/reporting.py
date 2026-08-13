@@ -9,19 +9,17 @@ from pathlib import Path
 
 from src import __version__
 from src.detector import DetectionEngine
-from src.docx_processor import StoryKind, TextContainer, extract_text_containers
-from src.models import PIIEntity, PIIType
-from src.recognizers import structured_recognizers
-
-
-STRUCTURED_REPORT_TYPES = (
-    PIIType.EMAIL,
-    PIIType.PHONE,
-    PIIType.SSN,
-    PIIType.CREDIT_CARD,
-    PIIType.IP_ADDRESS,
-    PIIType.DOB,
+from src.docx_processor import (
+    EXTRACTOR_SCHEMA_VERSION,
+    StoryKind,
+    TextContainer,
+    extract_text_containers,
 )
+from src.models import PIIEntity, PIIType
+from src.recognizers import all_recognizers
+
+
+REPORT_TYPES = tuple(PIIType)
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,6 +56,7 @@ class DetectionReport:
         return {
             "report_schema_version": "1.0",
             "tool_version": __version__,
+            "extractor_schema_version": EXTRACTOR_SCHEMA_VERSION,
             "source_name": self.source_name,
             "source_sha256": self.source_sha256,
             "privacy_safe": True,
@@ -79,7 +78,7 @@ class DetectionReport:
                         else None
                     ),
                 }
-                for entity_type in STRUCTURED_REPORT_TYPES
+                for entity_type in REPORT_TYPES
                 for items in (by_type[entity_type],)
             },
         }
@@ -102,7 +101,7 @@ def detect_containers(
     source_name: str = "document.docx",
     source_sha256: str | None = None,
 ) -> DetectionReport:
-    detector = engine or DetectionEngine(structured_recognizers())
+    detector = engine or DetectionEngine(all_recognizers())
     records: list[ContainerDetection] = []
     for container in containers:
         for entity in detector.detect(container.text):

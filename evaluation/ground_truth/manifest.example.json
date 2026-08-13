@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "document_sha256": "replace-with-source-sha256",
-  "extraction_version": "0.2.0-phase2a",
+  "extraction_version": "1.0",
   "annotation_status": "not_started",
   "containers": []
 }

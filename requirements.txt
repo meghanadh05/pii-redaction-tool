@@ -1,6 +1,6 @@
-# Phase 2A runtime dependencies.
+# Phase 2B runtime dependencies. The model is downloaded at installation time;
+# inference remains local and no document content is sent to external services.
 python-docx>=1.2,<2
 lxml>=6,<7
-
-# spaCy and Faker are intentionally deferred until semantic recognition and
-# pseudonym generation are implemented in later phases.
+spacy>=3.8.15,<3.9
+en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl#sha256=1932429db727d4bff3deed6b34cfc05df17794f4a52eeb26cf8928f7c1a0fb85

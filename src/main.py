@@ -15,7 +15,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pii-redaction-tool",
         description=(
-            "PII Redaction Tool Phase 2A: privacy-safe structured detection and "
+            "PII Redaction Tool Phase 2B: privacy-safe hybrid detection and "
             "DOCX extraction. Document redaction is not enabled yet."
         ),
     )
@@ -23,7 +23,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command")
     scan_parser = subparsers.add_parser(
         "scan",
-        help="scan a DOCX and print a privacy-safe structured detection summary",
+        help="scan a DOCX and print a privacy-safe hybrid detection summary",
     )
     scan_parser.add_argument("input_path", type=Path)
     scan_parser.add_argument(

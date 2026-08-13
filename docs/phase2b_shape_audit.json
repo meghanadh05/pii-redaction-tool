@@ -1,0 +1,23 @@
+{
+  "accessible_description_or_title_count": 98,
+  "attributes_by_kind": {"descr": 98, "name": 98},
+  "automatically_rewritten": false,
+  "parts_with_shape_metadata": 74,
+  "potential_pii_by_type": {
+    "ADDRESS": 0,
+    "COMPANY": 0,
+    "CREDIT_CARD": 0,
+    "DOB": 0,
+    "EMAIL": 0,
+    "IP_ADDRESS": 0,
+    "PERSON": 0,
+    "PHONE": 0,
+    "SSN": 0
+  },
+  "privacy_safe": true,
+  "review_policy": "Descriptions/titles may be exposed to assistive technology and shape names may be visible in Word's Selection Pane. They are audited but not automatically rewritten in Phase 2B.",
+  "selection_pane_name_count": 98,
+  "source_sha256": "8b5c93f7642d659e64b51be9f6172c86c2825417f376ca1800ed331515e6f929",
+  "unique_value_count": 86,
+  "xml_parts_scanned": 155
+}

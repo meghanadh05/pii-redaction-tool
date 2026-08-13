@@ -1,10 +1,10 @@
 # Ground-truth annotation schema
 
-Phase 2B will store annotations as UTF-8 JSON Lines. The annotation set is tied
+Phase 2B stores annotations as UTF-8 JSON Lines. The annotation set is tied
 to one immutable source DOCX by SHA-256 and to the extraction/container-ID
 version used to create it.
 
-Two files are planned:
+Each dataset contains two files:
 
 1. `manifest.json` identifies the source hash, extraction schema version, and
    the containers selected for exhaustive annotation. A selected container with
@@ -21,7 +21,7 @@ as false positives.
 {
   "schema_version": "1.0",
   "document_sha256": "<64 lowercase hex characters>",
-  "extraction_version": "0.2.0-phase2a",
+  "extraction_version": "1.0",
   "annotation_status": "in_progress",
   "containers": [
     {
@@ -34,7 +34,7 @@ as false positives.
 ```
 
 `review_complete` must be true before a container is eligible for evaluation.
-The sample strata should eventually cover contact information,
+The sample strata cover contact information,
 directors/management, tables, legal prose, financial-heavy negatives, and
 address-heavy content.
 
@@ -74,9 +74,9 @@ Rules:
 
 Primary matching uses exact
 `(container_id, entity_type, start, end)` equality with one prediction matched
-to at most one annotation. Reports will show TP, FP, FN, precision, recall, and
+to at most one annotation. Reports show TP, FP, FN, precision, recall, and
 F1 per category, plus micro totals and macro averages only across categories
-with relevant ground truth. ADDRESS will additionally receive a separately
+with relevant ground truth. ADDRESS additionally receives a separately
 labelled, one-to-one relaxed-overlap score; it will not replace exact results.
 
 The assignment's otherwise undefined accuracy will be reported as exact entity
@@ -92,4 +92,6 @@ created by token- or character-level accuracy across mostly non-PII text. If
 the union is empty, the value is reported as undefined or excluded from macro
 aggregation rather than used to claim perfect performance.
 
-No ground truth or measured metrics are included in Phase 2A.
+The Phase 2B development set is under `development/`. It was used for semantic
+rule and confidence calibration, so its measurements are not held-out or final
+performance. A broader independent annotation set is required next.

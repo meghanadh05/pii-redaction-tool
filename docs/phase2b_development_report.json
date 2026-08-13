@@ -1,0 +1,87 @@
+{
+  "dataset_role": "development_calibration_not_final_evaluation",
+  "document_sha256": "8b5c93f7642d659e64b51be9f6172c86c2825417f376ca1800ed331515e6f929",
+  "error_analysis": {
+    "false_negatives_by_type": {},
+    "false_positives_by_type": {}
+  },
+  "extraction_version": "1.0",
+  "interpretation_limits": "This small labelled subset was used to calibrate semantic rules. Its metrics are development results and must not be presented as held-out or final-document performance.",
+  "local_nlp": {
+    "model_name": "en_core_web_sm",
+    "model_version": "3.8.0",
+    "spacy": "3.8.15"
+  },
+  "metrics": {
+    "address_relaxed": {
+      "entity_detection_accuracy": 1.0,
+      "f1": 1.0,
+      "fn": 0,
+      "fp": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "tp": 6
+    },
+    "exact": {
+      "by_type": {
+        "ADDRESS": {"entity_detection_accuracy": 1.0, "f1": 1.0, "fn": 0, "fp": 0, "precision": 1.0, "recall": 1.0, "tp": 6},
+        "COMPANY": {"entity_detection_accuracy": 1.0, "f1": 1.0, "fn": 0, "fp": 0, "precision": 1.0, "recall": 1.0, "tp": 13},
+        "CREDIT_CARD": {"entity_detection_accuracy": null, "f1": 0.0, "fn": 0, "fp": 0, "precision": 0.0, "recall": 0.0, "tp": 0},
+        "DOB": {"entity_detection_accuracy": null, "f1": 0.0, "fn": 0, "fp": 0, "precision": 0.0, "recall": 0.0, "tp": 0},
+        "EMAIL": {"entity_detection_accuracy": 1.0, "f1": 1.0, "fn": 0, "fp": 0, "precision": 1.0, "recall": 1.0, "tp": 6},
+        "IP_ADDRESS": {"entity_detection_accuracy": null, "f1": 0.0, "fn": 0, "fp": 0, "precision": 0.0, "recall": 0.0, "tp": 0},
+        "PERSON": {"entity_detection_accuracy": 1.0, "f1": 1.0, "fn": 0, "fp": 0, "precision": 1.0, "recall": 1.0, "tp": 14},
+        "PHONE": {"entity_detection_accuracy": 1.0, "f1": 1.0, "fn": 0, "fp": 0, "precision": 1.0, "recall": 1.0, "tp": 5},
+        "SSN": {"entity_detection_accuracy": null, "f1": 0.0, "fn": 0, "fp": 0, "precision": 0.0, "recall": 0.0, "tp": 0}
+      },
+      "macro_ground_truth_types": {
+        "entity_detection_accuracy": 1.0,
+        "f1": 1.0,
+        "included_type_count": 5,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "micro": {
+        "entity_detection_accuracy": 1.0,
+        "f1": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "tp": 44
+      }
+    },
+    "matching_policy": {
+      "accuracy_definition": "entity_set_jaccard_tp_over_tp_fp_fn",
+      "address_relaxed": "one_to_one_intersection_over_shorter_span",
+      "address_relaxed_minimum_overlap": 0.5,
+      "primary": "exact_container_type_span"
+    }
+  },
+  "prediction_count": 44,
+  "privacy_safe": true,
+  "report_schema_version": "1.0",
+  "sample": {
+    "annotation_count": 44,
+    "annotations_by_type": {
+      "ADDRESS": 6,
+      "COMPANY": 13,
+      "CREDIT_CARD": 0,
+      "DOB": 0,
+      "EMAIL": 6,
+      "IP_ADDRESS": 0,
+      "PERSON": 14,
+      "PHONE": 5,
+      "SSN": 0
+    },
+    "containers_by_stratum": {
+      "address_contact": 17,
+      "capitalized_heading_negative": 2,
+      "contact_table": 13,
+      "management": 10,
+      "precision_negative": 9,
+      "textbox_negative": 2
+    },
+    "reviewed_container_count": 53
+  }
+}

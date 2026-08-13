@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from evaluation.evaluate import SpanAnnotation, exact_counts_by_type, exact_match_counts
+from evaluation.evaluate import (
+    SpanAnnotation,
+    evaluate_predictions,
+    exact_counts_by_type,
+    exact_match_counts,
+    relaxed_overlap_counts,
+)
 from src.models import PIIType
 
 
@@ -47,3 +53,41 @@ def test_per_type_counts_include_required_categories_with_zero_counts() -> None:
         "f1": 0.0,
         "entity_detection_accuracy": None,
     }
+
+
+def test_relaxed_address_matching_is_one_to_one_and_does_not_replace_exact() -> None:
+    truth = [SpanAnnotation("body/p-1", PIIType.ADDRESS, 10, 40)]
+    predictions = [
+        SpanAnnotation("body/p-1", PIIType.ADDRESS, 12, 38),
+        SpanAnnotation("body/p-1", PIIType.ADDRESS, 15, 35),
+    ]
+
+    relaxed = relaxed_overlap_counts(predictions, truth)
+    report = evaluate_predictions(predictions, truth)
+
+    assert relaxed.to_dict() == {
+        "tp": 1,
+        "fp": 1,
+        "fn": 0,
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 2 / 3,
+        "entity_detection_accuracy": 0.5,
+    }
+    assert report.exact_micro.true_positives == 0
+    assert report.relaxed_address.true_positives == 1
+    assert report.exact_macro_ground_truth_types.included_type_count == 1
+
+
+def test_relaxed_address_requires_same_container_and_type() -> None:
+    truth = [SpanAnnotation("body/p-1", PIIType.ADDRESS, 10, 40)]
+    predictions = [
+        SpanAnnotation("body/p-2", PIIType.ADDRESS, 10, 40),
+        SpanAnnotation("body/p-1", PIIType.COMPANY, 10, 40),
+    ]
+
+    metrics = relaxed_overlap_counts(predictions, truth)
+
+    assert metrics.true_positives == 0
+    assert metrics.false_positives == 1
+    assert metrics.false_negatives == 1

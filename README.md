@@ -1,9 +1,9 @@
 # PII Redaction Tool
 
-The project is complete through **Phase 2A**. It can extract supported DOCX
-text into stable, run-mapped containers and detect structured PII without
-printing raw values. Full-document redaction and PERSON/COMPANY/ADDRESS NER are
-intentionally not enabled yet.
+The project is complete through **Phase 2B**. It extracts DOCX text—including
+paired DrawingML/VML text boxes—into stable, run-mapped containers and detects
+structured and semantic PII without printing raw values. Full-document
+pseudonymization and redaction are intentionally not enabled yet.
 
 ## Assignment scope
 
@@ -27,12 +27,12 @@ phone, address, and name-shaped values crossing run boundaries. A loop such as
 `for run in paragraph.runs: regex.sub(...)` therefore cannot provide reliable
 detection.
 
-The current extractor creates one `TextContainer` per supported paragraph in
-the body, a table cell, a distinct header part, or a distinct footer part. Each
-container has a deterministic path-like ID, reconstructed logical text, and a
-map back to its OOXML runs. Shared headers/footers are traversed once; table
-cells and nested tables are traversed recursively; hyperlink-contained runs are
-included in logical text.
+The extractor creates one `TextContainer` per supported paragraph in the body,
+a table cell, a distinct header/footer part, or a paired text box. Each has a
+deterministic schema-1.0 ID, reconstructed logical text, and a map back to its
+OOXML runs. Shared headers/footers are traversed once; table cells and nested
+tables are recursive; hyperlink runs are included. Equal DrawingML choice and
+VML fallback text is detected once and rewritten in both representations.
 
 For a cross-run replacement, unaffected prefixes and suffixes stay in their
 original runs, replacement text is inserted once in the first affected run,
@@ -41,7 +41,7 @@ not flattened. If the source span has mixed formatting, the replacement
 inherits the first affected run's formatting. A run containing unsupported
 embedded XML is rejected before mutation rather than silently losing content.
 
-## Phase 2A recognizers
+## Phase 2B recognizers
 
 The following deterministic recognizers are implemented:
 
@@ -72,6 +72,19 @@ Validated structured evidence outranks weak overlaps; remaining conflicts are
 resolved by confidence, length, explicit category priority, and stable
 tie-breakers. Final spans never overlap.
 
+Semantic detection uses the local `en_core_web_sm` pipeline plus
+prospectus-specific rules:
+
+- `PERSON`: PERSON NER plus plausible multi-token name shape and role/contact
+  evidence, including guarded recovery of ORG-mislabelled Indian names.
+- `COMPANY`: legal-suffix matching plus ORG NER qualified by commercial or
+  document-role context; generic headings and role phrases are excluded.
+- `ADDRESS`: postal code, premise/street/locality structure, and optional
+  address labels, with FAC/GPE/LOC NER used only as supporting evidence.
+
+A location alone is never an address, an ordinary date is never a DOB, and raw
+spaCy output is never accepted without category-specific checks.
+
 ## Pipeline
 
 ```text
@@ -87,7 +100,7 @@ The supplied prospectus has only been scanned; it has not been redacted.
 
 ## Reproducible environment
 
-Phase 2A runs successfully on the existing CPython 3.13.6 interpreter. No
+Phase 2B runs successfully on the existing CPython 3.13.6 interpreter. No
 fallback interpreter was needed.
 
 ```bash
@@ -96,16 +109,16 @@ python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements-lock.txt
 ```
 
-`requirements.txt` contains the small runtime set, `requirements-dev.txt` adds
+`requirements.txt` contains the runtime set, `requirements-dev.txt` adds
 quality tools, and `requirements-lock.txt` records the resolved Python 3.13.6
-environment. spaCy and Faker are deferred because Phase 2A does not perform NER
-or replacement generation. No phone dependency was added: current rules use
-standard-library validation and explicit context; `phonenumbers` remains an
-option only if annotated evaluation shows a material precision/recall benefit.
+environment. spaCy 3.8.15 and `en_core_web_sm` 3.8.0 are locally installed and
+model inference makes no network calls. Faker remains deferred until
+pseudonymization. No phone dependency was added; `phonenumbers` remains an
+option only if broader annotated evaluation demonstrates a benefit.
 
 ## Commands
 
-Run the privacy-safe structured scan:
+Run the privacy-safe hybrid scan:
 
 ```bash
 .venv/bin/python -m src.main scan "input/Red Herring Prospectus.docx"
@@ -131,10 +144,9 @@ Quality gates:
 
 ## Evaluation design
 
-Ground truth will comprise a source manifest of exhaustively reviewed
-containers and privacy-safer JSONL positive annotations. Raw entity text is not
-required; an optional keyed HMAC can validate the reconstructed span without
-duplicating PII. The complete format is in
+Development ground truth comprises a source manifest of 53 exhaustively
+reviewed containers and 44 privacy-minimized JSONL positive annotations. Raw
+entity text is omitted. The complete format is in
 [the ground-truth schema](evaluation/ground_truth/schema.md).
 
 Primary matching is exact `(container_id, type, start, end)`. Reports will show
@@ -142,23 +154,22 @@ per-type and micro TP/FP/FN, precision, recall, and F1, with macro aggregates
 only where meaningful. ADDRESS will also receive a separately labelled
 one-to-one relaxed-overlap result.
 
-The assignment's ambiguous accuracy will be reported as exact entity-set
+The assignment's ambiguous accuracy is reported as exact entity-set
 accuracy (Jaccard): `TP / (TP + FP + FN)`. It has no dominating true-negative
 term and therefore cannot appear excellent merely because most prospectus text
-is not PII. No ground truth exists yet, so no evaluation metrics are claimed.
+is not PII. The current perfect 44/44 exact result is explicitly an in-sample
+calibration result, not a held-out or final accuracy claim. See
+[the Phase 2B findings](docs/phase2b_findings.md).
 
 ## Current capability boundary
 
-- PERSON, COMPANY, and ADDRESS recognizers remain Phase 2B scaffolds; no NER has
-  been implemented or tuned.
-- Standard paragraph/table/header/footer flows are supported and tested.
-  DrawingML/VML text boxes, shape descriptions, raster-image text, and unusual
-  field semantics still need explicit OOXML auditing before privacy-complete
-  redaction. In this prospectus, ordinary header runs are empty while header
-  text is held in shapes/text boxes, so the limitation is material and tracked.
+- PERSON, COMPANY, and ADDRESS are implemented but require a larger independent
+  holdout; the development set was used for calibration.
+- Paragraph/table/header/footer and paired DrawingML/VML text-box flows are
+  supported and tested. Shape descriptions and Selection Pane names are audited
+  but not safely auto-rewritten; raster images are not OCR'd.
 - The actual rewrite engine is tested with synthetic DOCX files but has not been
   applied to the prospectus.
-- OCR, full pseudonym factories, manual ground truth, measured metrics, and a
-  redacted output document remain out of scope for Phase 2A.
+- OCR, full pseudonym factories, held-out final metrics, leak scanning of a
+  redacted copy, and a redacted output document remain out of scope for Phase 2B.
 - All processing is local; document text is not sent to external APIs.
-
