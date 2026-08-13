@@ -262,14 +262,9 @@ class TextContainer:
     def run_map(self) -> tuple[RunFragment, ...]:
         return self.logical.fragments
 
-    def rewrite(self, replacements: Sequence[TextReplacement]) -> None:
-        """Apply replacements without flattening the paragraph.
-
-        Replacement text inherits the formatting of the first affected run.
-        A run containing fields, drawings, or other unsupported children is
-        rejected before any mutation so embedded content cannot be discarded.
-        """
-
+    def _rewrite_plans(
+        self, replacements: Sequence[TextReplacement]
+    ) -> list[tuple[TextRepresentation, tuple[str, ...], list[int]]]:
         if self.metadata.get("rewrite_safe") == "false":
             raise UnsupportedRunContentError(
                 f"Container {self.id!r} has unmatched text-box representations"
@@ -302,6 +297,22 @@ class TextContainer:
                     raise UnsupportedRunContentError(
                         f"Container {self.id!r} contains unsupported run XML"
                     )
+        return plans
+
+    def validate_rewrite(self, replacements: Sequence[TextReplacement]) -> None:
+        """Preflight a rewrite, including mirrored text boxes, without mutation."""
+
+        self._rewrite_plans(replacements)
+
+    def rewrite(self, replacements: Sequence[TextReplacement]) -> None:
+        """Apply replacements without flattening the paragraph.
+
+        Replacement text inherits the formatting of the first affected run.
+        A run containing fields, drawings, or other unsupported children is
+        rejected before any mutation so embedded content cannot be discarded.
+        """
+
+        plans = self._rewrite_plans(replacements)
 
         for representation, rewritten, changed in plans:
             for index in changed:

@@ -1,9 +1,10 @@
 # PII Redaction Tool
 
-The project is complete through **Phase 2B**. It extracts DOCX text—including
-paired DrawingML/VML text boxes—into stable, run-mapped containers and detects
-structured and semantic PII without printing raw values. Full-document
-pseudonymization and redaction are intentionally not enabled yet.
+The project is complete through **Phase 2C dry-run planning**. It extracts DOCX
+text—including paired DrawingML/VML text boxes—into stable containers, detects
+structured and semantic PII, creates keyed deterministic synthetic values, and
+preflights a replacement plan without printing raw values or writing a DOCX.
+Full-document redaction is deliberately blocked by the untouched holdout gate.
 
 ## Assignment scope
 
@@ -91,12 +92,13 @@ spaCy output is never accepted without category-specific checks.
 DOCX -> stable containers + logical run maps -> local recognizers
      -> deterministic conflict resolution -> privacy-safe detection report
 
-Future:
+Quality-gated future:
 resolved entities -> deterministic pseudonyms -> run-aware rewrite -> save copy
                   -> re-extract -> residual leak scan -> package audit
 ```
 
-The supplied prospectus has only been scanned; it has not been redacted.
+The supplied prospectus has only been scanned and dry-run planned; it has not
+been redacted.
 
 ## Reproducible environment
 
@@ -124,6 +126,16 @@ Run the privacy-safe hybrid scan:
 .venv/bin/python -m src.main scan "input/Red Herring Prospectus.docx"
 ```
 
+Build a privacy-safe replacement plan without mutation or output writing:
+
+```bash
+.venv/bin/python -m src.main redact "input/Red Herring Prospectus.docx" --dry-run
+```
+
+The dry run uses `PII_REDACTION_KEY` when present and otherwise creates an
+ephemeral in-process key. A future write-enabled run will require an explicit
+secret. Running `redact` without `--dry-run` is currently refused.
+
 The default output contains counts, average confidence, story counts, and
 cross-run counts—not entity values. Raw terminal display requires the explicit
 unsafe flag and should never be redirected into committed artifacts:
@@ -144,9 +156,9 @@ Quality gates:
 
 ## Evaluation design
 
-Development ground truth comprises a source manifest of 53 exhaustively
-reviewed containers and 44 privacy-minimized JSONL positive annotations. Raw
-entity text is omitted. The complete format is in
+Development ground truth comprises 53 reviewed containers and 44 annotations.
+The independent holdout contains 120 disjoint reviewed containers and 101
+annotations. Raw entity text is omitted. The complete format is in
 [the ground-truth schema](evaluation/ground_truth/schema.md).
 
 Primary matching is exact `(container_id, type, start, end)`. Reports will show
@@ -157,19 +169,39 @@ one-to-one relaxed-overlap result.
 The assignment's ambiguous accuracy is reported as exact entity-set
 accuracy (Jaccard): `TP / (TP + FP + FN)`. It has no dominating true-negative
 term and therefore cannot appear excellent merely because most prospectus text
-is not PII. The current perfect 44/44 exact result is explicitly an in-sample
-calibration result, not a held-out or final accuracy claim. See
-[the Phase 2B findings](docs/phase2b_findings.md).
+is not PII. The initial untouched holdout produced micro TP=70, FP=59, FN=31,
+precision 0.543, recall 0.693, and F1 0.609. COMPANY precision is 0.250, which
+blocks final redaction. The immutable result is
+[here](docs/phase2c_holdout_initial_75ce5f8.json).
+
+## Deterministic pseudonymization and planning
+
+All nine required types have keyed type-specific factories. Structured outputs
+are checked by the same email, phone, SSN, Luhn, date, and IP validators used by
+detection. Synthetic domains/ranges and explicit `Example`/`Synthetic` naming
+reduce the chance that generated data represents a real person or organization.
+The pseudonymizer retries if normalized output equals the original.
+
+Identity linking is separate from detection. It links PERSON and EMAIL only
+when one unique local-part/name match exists inside an explicit local context;
+ambiguous or weak cases remain independent. A linked pair derives the same
+keyed seed so the synthetic email agrees with the synthetic person's name.
+
+Replacement planning detects overlaps and unsafe Word content, checks repeated
+entity consistency, calculates every replacement before mutation, and
+preflights all affected runs and text-box mirrors. The full dry run currently
+plans 848 replacements, including 484 cross-run spans, with zero structural
+conflicts. These counts are detector outputs, not approval to write them.
 
 ## Current capability boundary
 
-- PERSON, COMPANY, and ADDRESS are implemented but require a larger independent
-  holdout; the development set was used for calibration.
+- The independent holdout shows unacceptable COMPANY precision and material
+  PERSON/ADDRESS recall errors. Recognizers were not tuned on holdout labels.
 - Paragraph/table/header/footer and paired DrawingML/VML text-box flows are
   supported and tested. Shape descriptions and Selection Pane names are audited
   but not safely auto-rewritten; raster images are not OCR'd.
-- The actual rewrite engine is tested with synthetic DOCX files but has not been
-  applied to the prospectus.
-- OCR, full pseudonym factories, held-out final metrics, leak scanning of a
-  redacted copy, and a redacted output document remain out of scope for Phase 2B.
+- Pseudonym factories and replacement application are tested on synthetic DOCX
+  files but have not been applied to the prospectus.
+- OCR, leak scanning of a redacted copy, and a final redacted document remain
+  out of scope while the holdout quality gate is blocked.
 - All processing is local; document text is not sent to external APIs.

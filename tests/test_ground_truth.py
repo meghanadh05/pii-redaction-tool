@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from evaluation.dataset import load_ground_truth
@@ -63,3 +64,13 @@ def test_holdout_is_larger_complete_and_disjoint_from_development() -> None:
         "management_person": 20,
         "textbox": 7,
     }
+
+    initial_report = json.loads(
+        (PROJECT_ROOT / "docs" / "phase2c_holdout_initial_75ce5f8.json").read_text()
+    )
+    assert initial_report["immutable_result_name"] == (
+        "phase2c_holdout_initial_75ce5f8"
+    )
+    assert initial_report["recognizer_snapshot_commit"] == "75ce5f8"
+    assert initial_report["holdout_snapshot_commit"] == "bc1fe79"
+    assert initial_report["sample"] == distribution

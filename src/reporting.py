@@ -1,4 +1,4 @@
-"""Privacy-safe structured-detection reporting for DOCX containers."""
+"""Privacy-safe hybrid-detection reporting for DOCX containers."""
 
 from __future__ import annotations
 

@@ -94,4 +94,7 @@ aggregation rather than used to claim perfect performance.
 
 The Phase 2B development set is under `development/`. It was used for semantic
 rule and confidence calibration, so its measurements are not held-out or final
-performance. A broader independent annotation set is required next.
+performance. The larger `holdout/` set is disjoint, frozen against its source
+hash and recognizer snapshot, and must never be used to tune recognizers. Its
+first result is stored under an immutable snapshot-qualified filename; any
+later post-fix result must be added as a new file rather than overwriting it.

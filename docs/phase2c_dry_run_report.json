@@ -1,0 +1,40 @@
+{
+  "conflict_count": 0,
+  "conflicts_by_reason": {},
+  "container_count": 4772,
+  "containers_by_story": {
+    "BODY_PARAGRAPH": 1006,
+    "FOOTER_PARAGRAPH": 74,
+    "HEADER_PARAGRAPH": 75,
+    "TABLE_CELL_PARAGRAPH": 3525,
+    "TEXT_BOX_PARAGRAPH": 92
+  },
+  "cross_run_replacement_count": 484,
+  "document_mutated": false,
+  "document_write_enabled": false,
+  "dry_run": true,
+  "extractor_schema_version": "1.0",
+  "linked_entity_count": 0,
+  "linked_identity_count": 0,
+  "mirrored_representation_update_count": 0,
+  "planned_replacement_count": 848,
+  "planned_replacements_by_type": {
+    "ADDRESS": 25,
+    "COMPANY": 492,
+    "CREDIT_CARD": 0,
+    "DOB": 0,
+    "EMAIL": 52,
+    "IP_ADDRESS": 0,
+    "PERSON": 243,
+    "PHONE": 36,
+    "SSN": 0
+  },
+  "privacy_safe": true,
+  "pseudonym_key_source": "ephemeral_dry_run",
+  "quality_gate": "BLOCKED_BY_UNTOUCHED_HOLDOUT",
+  "report_schema_version": "1.0",
+  "source_name": "Red Herring Prospectus.docx",
+  "source_sha256": "8b5c93f7642d659e64b51be9f6172c86c2825417f376ca1800ed331515e6f929",
+  "source_unchanged": true,
+  "text_box_replacement_count": 0
+}

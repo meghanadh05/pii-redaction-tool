@@ -10,8 +10,8 @@ from pathlib import Path
 class AppConfig:
     """Paths and operating policy for a redaction run.
 
-    A pseudonymization secret will be loaded from an environment variable in
-    Phase 2. It is deliberately not represented as a checked-in default.
+    A pseudonymization secret is loaded from an environment variable for any
+    future write-enabled run. It is never represented as a checked-in default.
     """
 
     input_path: Path
