@@ -1,0 +1,153 @@
+{
+  "report_schema_version": "1.0",
+  "append_only_result_name": "phase2e_person_precision_diagnostic_ecbcbf6",
+  "dataset_role": "phase2c_holdout_second_post_fix_diagnostic_not_blind",
+  "privacy_safe": true,
+  "document_sha256": "8b5c93f7642d659e64b51be9f6172c86c2825417f376ca1800ed331515e6f929",
+  "extraction_version": "1.0",
+  "holdout_snapshot_commit": "bc1fe79",
+  "recognizer_snapshot_commit": "ecbcbf6",
+  "prediction_count": 108,
+  "sample": {
+    "reviewed_container_count": 120,
+    "annotation_count": 101,
+    "containers_by_stratum": {
+      "address_variant": 15,
+      "capitalized_heading": 8,
+      "company_heavy": 40,
+      "contact_structured": 15,
+      "financial_legal_negative": 15,
+      "management_person": 20,
+      "textbox": 7
+    },
+    "annotations_by_type": {
+      "PERSON": 34,
+      "EMAIL": 19,
+      "PHONE": 5,
+      "COMPANY": 24,
+      "ADDRESS": 19,
+      "SSN": 0,
+      "CREDIT_CARD": 0,
+      "DOB": 0,
+      "IP_ADDRESS": 0
+    }
+  },
+  "comparison_to_phase2d": {
+    "PERSON": {
+      "before": {
+        "tp": 29,
+        "fp": 21,
+        "fn": 5,
+        "precision": 0.58,
+        "recall": 0.8529411764705882,
+        "f1": 0.6904761904761905,
+        "entity_detection_accuracy": 0.5272727272727272
+      },
+      "after": {
+        "tp": 29,
+        "fp": 14,
+        "fn": 5,
+        "precision": 0.6744186046511628,
+        "recall": 0.8529411764705882,
+        "f1": 0.7532467532467532,
+        "entity_detection_accuracy": 0.6041666666666666
+      }
+    }
+  },
+  "metrics": {
+    "matching_policy": {
+      "primary": "exact_container_type_span",
+      "address_relaxed": "one_to_one_intersection_over_shorter_span",
+      "address_relaxed_minimum_overlap": 0.5,
+      "accuracy_definition": "entity_set_jaccard_tp_over_tp_fp_fn"
+    },
+    "exact": {
+      "micro": {
+        "tp": 91,
+        "fp": 17,
+        "fn": 10,
+        "precision": 0.8425925925925926,
+        "recall": 0.900990099009901,
+        "f1": 0.8708133971291866,
+        "entity_detection_accuracy": 0.7711864406779662
+      },
+      "macro_ground_truth_types": {
+        "included_type_count": 5,
+        "precision": 0.9061755869589406,
+        "recall": 0.9267285861713106,
+        "f1": 0.9140360783381378,
+        "entity_detection_accuracy": 0.8546794871794872
+      },
+      "by_type": {
+        "PERSON": {
+          "tp": 29,
+          "fp": 14,
+          "fn": 5,
+          "precision": 0.6744186046511628,
+          "recall": 0.8529411764705882,
+          "f1": 0.7532467532467532,
+          "entity_detection_accuracy": 0.6041666666666666
+        },
+        "EMAIL": {
+          "tp": 19,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "entity_detection_accuracy": 1.0
+        },
+        "PHONE": {
+          "tp": 5,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "entity_detection_accuracy": 1.0
+        },
+        "COMPANY": {
+          "tp": 20,
+          "fp": 2,
+          "fn": 4,
+          "precision": 0.9090909090909091,
+          "recall": 0.8333333333333334,
+          "f1": 0.8695652173913043,
+          "entity_detection_accuracy": 0.7692307692307693
+        },
+        "ADDRESS": {
+          "tp": 18,
+          "fp": 1,
+          "fn": 1,
+          "precision": 0.9473684210526315,
+          "recall": 0.9473684210526315,
+          "f1": 0.9473684210526315,
+          "entity_detection_accuracy": 0.9
+        }
+      }
+    },
+    "address_relaxed": {
+      "tp": 19,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "entity_detection_accuracy": 1.0
+    }
+  },
+  "error_analysis": {
+    "false_positives_by_type": {
+      "PERSON": 14,
+      "COMPANY": 2,
+      "ADDRESS": 1
+    },
+    "false_negatives_by_type": {
+      "PERSON": 5,
+      "COMPANY": 4,
+      "ADDRESS": 1
+    }
+  },
+  "write_policy": "append-only diagnostic; never overwrite prior Phase 2C results",
+  "interpretation_limits": "Phase 2C labels were already diagnosed in Phase 2D. This single post-repair comparison was run only after freezing commit ecbcbf6; it is not blind or final and did not influence recognizer code."
+}
