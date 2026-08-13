@@ -5,7 +5,34 @@ categories, and writes a structurally validated copy in which detected values
 are replaced by realistic synthetic alternatives. The supplied prospectus has
 been processed to
 [`output/Red_Herring_Prospectus_Redacted.docx`](output/Red_Herring_Prospectus_Redacted.docx).
-All processing is local; document contents are not sent to external APIs.
+
+Detection never calls an external API: the spaCy model runs in-process wherever
+the tool is running. The CLI and the Docker image below keep documents entirely
+on your machine. The hosted demo necessarily receives the file you upload —
+see [Try it](#try-it).
+
+## Try it
+
+A browser demo lets you upload a `.docx` and download the redacted result along
+with a per-type replacement count and the verification report.
+
+```bash
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/streamlit run streamlit_app.py    # http://localhost:8501
+```
+
+To run it without installing anything into your environment:
+
+```bash
+docker build -t pii-redaction .
+docker run --rm -p 8501:8501 pii-redaction
+```
+
+Uploads are written to a temporary directory, read back into memory, and
+deleted before the response is rendered — nothing is kept on disk and no
+document text is logged. Each request uses a fresh pseudonymization key, so
+replacements are consistent within one document but not linkable across
+requests.
 
 ## Installation
 
@@ -59,8 +86,10 @@ ZIP/XML integrity, and performs a residual high-confidence scan.
 Semantic detection remains imperfect: PERSON is the largest false-positive
 risk, exact ADDRESS boundaries can differ, and real prospectus recall could not
 be measured for SSN, CREDIT_CARD, DOB, or IP_ADDRESS because the labelled subset
-contained no positives. Raster-image text is not OCRed; shape metadata is
-audited but not rewritten. See the concise
+contained no positives. The semantic rules are intentionally biased toward
+English-language, Indian corporate documents, so other locales may have lower
+recall. Raster-image text is not OCRed; shape metadata is audited but not
+rewritten. See the concise
 [`evaluation report`](docs/evaluation_report.md),
 [`redaction run report`](docs/redaction_run_report.json), and
 [`engineering overview`](docs/engineering_overview.md) for details.
