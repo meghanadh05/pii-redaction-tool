@@ -1,0 +1,52 @@
+{
+  "report_schema_version": "1.0",
+  "dataset_role": "privacy_safe_full_document_sanity_scan_not_evaluation",
+  "privacy_safe": true,
+  "document_sha256": "8b5c93f7642d659e64b51be9f6172c86c2825417f376ca1800ed331515e6f929",
+  "extraction_version": "1.0",
+  "recognizer_snapshot_commit": "99f9fb5",
+  "container_count": 4772,
+  "accepted_detection_count": 661,
+  "accepted_detections_by_type": {
+    "ADDRESS": 61,
+    "COMPANY": 148,
+    "EMAIL": 52,
+    "PERSON": 364,
+    "PHONE": 36
+  },
+  "semantic_cross_run_count": {
+    "ADDRESS": 61,
+    "COMPANY": 86,
+    "PERSON": 229
+  },
+  "company_count_comparison": {
+    "phase2c_count": 492,
+    "phase2d_count": 148,
+    "absolute_decrease": 344,
+    "percent_decrease": 69.91869918699187
+  },
+  "company_accepted_evidence": {
+    "precise_legal_suffix": 136,
+    "qualified_local_ner_or_named_commercial_structure": 12
+  },
+  "raw_company_candidate_audit": {
+    "raw_ner_org_candidates": 1680,
+    "precise_legal_suffix_candidates": 136,
+    "rejected_excluded_role_legal_government_trust_or_person_shape": 853,
+    "rejected_no_candidate_local_company_evidence": 598,
+    "rejected_whole_container_heading": 118,
+    "superseded_by_precise_legal_span": 98,
+    "accepted_contextual_ner_before_conflict_resolution": 13
+  },
+  "replacement_plan_dry_run": {
+    "planned_replacement_count": 661,
+    "cross_run_replacement_count": 400,
+    "conflict_count": 0,
+    "linked_entity_count": 0,
+    "text_box_replacement_count": 0,
+    "document_mutated": false,
+    "document_write_enabled": false,
+    "source_unchanged": true
+  },
+  "interpretation_limits": "Counts are detector outputs, not labelled performance. A lower COMPANY count is not itself evidence of accuracy; the candidate audit records the generalized evidence gates responsible for acceptance and rejection."
+}

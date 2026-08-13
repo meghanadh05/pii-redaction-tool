@@ -1,0 +1,46 @@
+{
+  "append_only_result_name": "phase2d_holdout_post_fix_99f9fb5",
+  "dataset_role": "phase2c_holdout_post_fix_diagnostic_not_blind",
+  "document_sha256": "8b5c93f7642d659e64b51be9f6172c86c2825417f376ca1800ed331515e6f929",
+  "error_analysis": {
+    "false_negatives_by_type": {"ADDRESS": 1, "COMPANY": 4, "PERSON": 5},
+    "false_positives_by_type": {"ADDRESS": 1, "COMPANY": 2, "PERSON": 21}
+  },
+  "extraction_version": "1.0",
+  "holdout_snapshot_commit": "bc1fe79",
+  "interpretation_limits": "The Phase 2C holdout labels informed generalized error classes. This post-fix run is diagnostic only, was executed once after commit 99f9fb5, and is not a blind final evaluation.",
+  "metrics": {
+    "address_relaxed": {"entity_detection_accuracy": 1.0, "f1": 1.0, "fn": 0, "fp": 0, "precision": 1.0, "recall": 1.0, "tp": 19},
+    "exact": {
+      "by_type": {
+        "ADDRESS": {"entity_detection_accuracy": 0.9, "f1": 0.9473684210526315, "fn": 1, "fp": 1, "precision": 0.9473684210526315, "recall": 0.9473684210526315, "tp": 18},
+        "COMPANY": {"entity_detection_accuracy": 0.7692307692307693, "f1": 0.8695652173913043, "fn": 4, "fp": 2, "precision": 0.9090909090909091, "recall": 0.8333333333333334, "tp": 20},
+        "CREDIT_CARD": {"entity_detection_accuracy": null, "f1": 0.0, "fn": 0, "fp": 0, "precision": 0.0, "recall": 0.0, "tp": 0},
+        "DOB": {"entity_detection_accuracy": null, "f1": 0.0, "fn": 0, "fp": 0, "precision": 0.0, "recall": 0.0, "tp": 0},
+        "EMAIL": {"entity_detection_accuracy": 1.0, "f1": 1.0, "fn": 0, "fp": 0, "precision": 1.0, "recall": 1.0, "tp": 19},
+        "IP_ADDRESS": {"entity_detection_accuracy": null, "f1": 0.0, "fn": 0, "fp": 0, "precision": 0.0, "recall": 0.0, "tp": 0},
+        "PERSON": {"entity_detection_accuracy": 0.5272727272727272, "f1": 0.6904761904761905, "fn": 5, "fp": 21, "precision": 0.58, "recall": 0.8529411764705882, "tp": 29},
+        "PHONE": {"entity_detection_accuracy": 1.0, "f1": 1.0, "fn": 0, "fp": 0, "precision": 1.0, "recall": 1.0, "tp": 5},
+        "SSN": {"entity_detection_accuracy": null, "f1": 0.0, "fn": 0, "fp": 0, "precision": 0.0, "recall": 0.0, "tp": 0}
+      },
+      "macro_ground_truth_types": {"entity_detection_accuracy": 0.8393006993006994, "f1": 0.9014819657840253, "included_type_count": 5, "precision": 0.887291866028708, "recall": 0.9267285861713106},
+      "micro": {"entity_detection_accuracy": 0.728, "f1": 0.8425925925925927, "fn": 10, "fp": 24, "precision": 0.7913043478260869, "recall": 0.900990099009901, "tp": 91}
+    },
+    "matching_policy": {
+      "accuracy_definition": "entity_set_jaccard_tp_over_tp_fp_fn",
+      "address_relaxed": "one_to_one_intersection_over_shorter_span",
+      "address_relaxed_minimum_overlap": 0.5,
+      "primary": "exact_container_type_span"
+    }
+  },
+  "prediction_count": 115,
+  "privacy_safe": true,
+  "recognizer_snapshot_commit": "99f9fb5",
+  "report_schema_version": "1.0",
+  "sample": {
+    "annotation_count": 101,
+    "annotations_by_type": {"ADDRESS": 19, "COMPANY": 24, "CREDIT_CARD": 0, "DOB": 0, "EMAIL": 19, "IP_ADDRESS": 0, "PERSON": 34, "PHONE": 5, "SSN": 0},
+    "reviewed_container_count": 120
+  },
+  "write_policy": "append-only diagnostic; never overwrite the untouched Phase 2C result"
+}

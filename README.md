@@ -1,10 +1,11 @@
 # PII Redaction Tool
 
-The project is complete through **Phase 2C dry-run planning**. It extracts DOCX
+The project is complete through **Phase 2D semantic repair**. It extracts DOCX
 text—including paired DrawingML/VML text boxes—into stable containers, detects
 structured and semantic PII, creates keyed deterministic synthetic values, and
 preflights a replacement plan without printing raw values or writing a DOCX.
-Full-document redaction is deliberately blocked by the untouched holdout gate.
+Full-document redaction is deliberately blocked pending a final blind semantic
+evaluation.
 
 ## Assignment scope
 
@@ -42,7 +43,7 @@ not flattened. If the source span has mixed formatting, the replacement
 inherits the first affected run's formatting. A run containing unsupported
 embedded XML is rejected before mutation rather than silently losing content.
 
-## Phase 2B recognizers
+## Recognizers
 
 The following deterministic recognizers are implemented:
 
@@ -78,8 +79,10 @@ prospectus-specific rules:
 
 - `PERSON`: PERSON NER plus plausible multi-token name shape and role/contact
   evidence, including guarded recovery of ORG-mislabelled Indian names.
-- `COMPANY`: legal-suffix matching plus ORG NER qualified by commercial or
-  document-role context; generic headings and role phrases are excluded.
+- `COMPANY`: precise legal-suffix matching plus ORG NER qualified only by
+  candidate-local labels or named commercial structure; generic roles,
+  legislation, regulators, trusts, headings, and person-shaped spans are
+  excluded.
 - `ADDRESS`: postal code, premise/street/locality structure, and optional
   address labels, with FAC/GPE/LOC NER used only as supporting evidence.
 
@@ -102,7 +105,7 @@ been redacted.
 
 ## Reproducible environment
 
-Phase 2B runs successfully on the existing CPython 3.13.6 interpreter. No
+The project runs successfully on the existing CPython 3.13.6 interpreter. No
 fallback interpreter was needed.
 
 ```bash
@@ -157,7 +160,7 @@ Quality gates:
 ## Evaluation design
 
 Development ground truth comprises 53 reviewed containers and 44 annotations.
-The independent holdout contains 120 disjoint reviewed containers and 101
+The Phase 2C holdout contains 120 disjoint reviewed containers and 101
 annotations. Raw entity text is omitted. The complete format is in
 [the ground-truth schema](evaluation/ground_truth/schema.md).
 
@@ -169,10 +172,15 @@ one-to-one relaxed-overlap result.
 The assignment's ambiguous accuracy is reported as exact entity-set
 accuracy (Jaccard): `TP / (TP + FP + FN)`. It has no dominating true-negative
 term and therefore cannot appear excellent merely because most prospectus text
-is not PII. The initial untouched holdout produced micro TP=70, FP=59, FN=31,
-precision 0.543, recall 0.693, and F1 0.609. COMPANY precision is 0.250, which
-blocks final redaction. The immutable result is
+is not PII. The initial untouched Phase 2C holdout produced micro TP=70, FP=59,
+FN=31, precision 0.543, recall 0.693, and F1 0.609. Its immutable result is
 [here](docs/phase2c_holdout_initial_75ce5f8.json).
+
+After development-driven semantic repairs, the old holdout was run once as a
+non-blind diagnostic: micro precision 0.791, recall 0.901, and F1 0.843;
+COMPANY precision improved from 0.250 to 0.909. This is not a final result, and
+PERSON precision remains a concern at 0.580. A fresh 180-container candidate
+pool is frozen, disjoint from both earlier datasets, unannotated, and unevaluated.
 
 ## Deterministic pseudonymization and planning
 
@@ -190,18 +198,19 @@ keyed seed so the synthetic email agrees with the synthetic person's name.
 Replacement planning detects overlaps and unsafe Word content, checks repeated
 entity consistency, calculates every replacement before mutation, and
 preflights all affected runs and text-box mirrors. The full dry run currently
-plans 848 replacements, including 484 cross-run spans, with zero structural
+plans 661 replacements, including 400 cross-run spans, with zero structural
 conflicts. These counts are detector outputs, not approval to write them.
 
 ## Current capability boundary
 
-- The independent holdout shows unacceptable COMPANY precision and material
-  PERSON/ADDRESS recall errors. Recognizers were not tuned on holdout labels.
+- COMPANY and ADDRESS improved substantially in the one permitted post-fix old-
+  holdout diagnostic, but that set is no longer blind. PERSON still shows
+  material false-positive risk, so no final quality claim is made.
 - Paragraph/table/header/footer and paired DrawingML/VML text-box flows are
   supported and tested. Shape descriptions and Selection Pane names are audited
   but not safely auto-rewritten; raster images are not OCR'd.
 - Pseudonym factories and replacement application are tested on synthetic DOCX
   files but have not been applied to the prospectus.
 - OCR, leak scanning of a redacted copy, and a final redacted document remain
-  out of scope while the holdout quality gate is blocked.
+  out of scope pending a fresh blind evaluation and an explicit go/no-go gate.
 - All processing is local; document text is not sent to external APIs.

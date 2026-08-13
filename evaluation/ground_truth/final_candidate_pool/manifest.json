@@ -1,0 +1,916 @@
+{
+  "schema_version": "1.0",
+  "document_sha256": "8b5c93f7642d659e64b51be9f6172c86c2825417f376ca1800ed331515e6f929",
+  "extraction_version": "1.0",
+  "annotation_status": "not_started",
+  "evaluation_status": "not_run",
+  "labels_inspected": false,
+  "recognizer_snapshot_commit": "99f9fb5",
+  "selection_algorithm": "phase2d-final-pool-v1",
+  "selection_policy": "Deterministic risk-stratified candidate selection using container metadata and model outputs only; disjoint from Phase 2B development and Phase 2C holdout containers. No candidate labels were inspected.",
+  "excluded_dataset_container_count": 173,
+  "pool_container_count": 180,
+  "pool_manifest_sha256": "ceefe99f45589f911c8b634f85ed9f21a99ae48337013398554e55fa2c6307b9",
+  "containers": [
+    {
+      "container_id": "header:/word/header60.xml:default/p0000/txb0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "textbox"
+    },
+    {
+      "container_id": "header:/word/header8.xml:default/p0000/txb0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "textbox"
+    },
+    {
+      "container_id": "header:/word/header7.xml:default/p0000/txb0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "textbox"
+    },
+    {
+      "container_id": "header:/word/header29.xml:default/p0000/txb0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "textbox"
+    },
+    {
+      "container_id": "header:/word/header62.xml:default/p0000/txb0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "textbox"
+    },
+    {
+      "container_id": "header:/word/header25.xml:default/p0000/txb0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "textbox"
+    },
+    {
+      "container_id": "header:/word/header3.xml:default/p0000/txb0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "textbox"
+    },
+    {
+      "container_id": "header:/word/header49.xml:default/p0000/txb0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "textbox"
+    },
+    {
+      "container_id": "header:/word/header33.xml:default/p0000/txb0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "textbox"
+    },
+    {
+      "container_id": "header:/word/header44.xml:default/p0000/txb0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "textbox"
+    },
+    {
+      "container_id": "header:/word/header69.xml:default/p0000/txb0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "textbox"
+    },
+    {
+      "container_id": "header:/word/header26.xml:default/p0000/txb0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "textbox"
+    },
+    {
+      "container_id": "header:/word/header35.xml:default/p0000/txb0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "textbox"
+    },
+    {
+      "container_id": "header:/word/header12.xml:default/p0000/txb0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "textbox"
+    },
+    {
+      "container_id": "header:/word/header32.xml:default/p0000/txb0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "textbox"
+    },
+    {
+      "container_id": "body/p0886",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/t0073/r0001/c0000/p0002",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/p0732",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/p0742",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/p0819",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/p0794",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/t0000/r0014/c0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/t0070/r0004/c0003/p0001",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/p0724",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/p0958",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/p0776",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/p0955",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/p0652",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/p0428",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/t0005/r0029/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/p0909",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/p0400",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/t0070/r0002/c0003/p0000",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/t0070/r0008/c0003/p0000",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/p0526",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/p0808",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/p0793",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/t0009/r0009/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/p0885",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/t0006/r0012/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "address_variant"
+    },
+    {
+      "container_id": "body/p0803",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/t0002/r0014/c0002/p0003",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/p0801",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/p0756",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/p0779",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/t0002/r0014/c0001/p0003",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/p0826",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/p0744",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/p0842",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/p0910",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/p0898",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/p0929",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/p0745",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/t0002/r0014/c0002/p0004",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/p0932",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/p0841",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/p0810",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/p0786",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/p0874",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/p0762",
+      "review_complete": false,
+      "sample_stratum": "contact_structured"
+    },
+    {
+      "container_id": "body/t0008/r0009/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0024",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0440",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0262",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/t0009/r0006/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0647",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/t0010/r0020/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0455",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0409",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/t0004/r0006/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/t0072/r0010/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/t0000/r0012/c0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0463",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0824",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/t0002/r0001/c0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0556",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0048",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/t0010/r0009/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0919",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0675",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/t0005/r0010/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0267",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0902",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0800",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0945",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0319",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/t0012/r0002/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/t0012/r0007/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0723",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0657",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/t0011/r0014/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0347",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0865",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0114",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0306",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/t0014/r0011/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/t0053/r0008/c0003/p0000",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/p0282",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/t0010/r0008/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/t0018/r0057/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "company_legal_prose"
+    },
+    {
+      "container_id": "body/t0004/r0007/c0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0283",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0705",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0689",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/t0002/r0001/c0000/p0001",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0804",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/t0001/r0002/c0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/t0010/r0005/c0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0279",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0192",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0849",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0673",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/t0008/r0003/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0252",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0277",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/t0000/r0009/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/t0005/r0013/c0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0905",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0618",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0557",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0701",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/t0000/r0008/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/t0001/r0001/c0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/t0002/r0014/c0002/p0007",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0667",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0763",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0186",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/t0012/r0014/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/t0010/r0026/c0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/t0012/r0006/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0441",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0260",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/t0000/r0005/c0004/p0000",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0464",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0182",
+      "review_complete": false,
+      "sample_stratum": "management_person"
+    },
+    {
+      "container_id": "body/p0661",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/p0403",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/p0983",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/t0069/r0000/c0003/p0000",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/t0016/r0023/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/p0610",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/p0295",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/p0146",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/t0015/r0013/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/t0012/r0020/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/p0305",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/p0397",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/p0646",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/p0438",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/p0594",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/t0016/r0024/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/p0598",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/p0542",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/p0953",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/p0595",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/p0471",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/p0383",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/p0614",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/p0635",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/t0065/r0001/c0002/p0000",
+      "review_complete": false,
+      "sample_stratum": "financial_legal_negative"
+    },
+    {
+      "container_id": "body/t0019/r0016/c0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "capitalized_heading_negative"
+    },
+    {
+      "container_id": "body/t0012/r0011/c0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "capitalized_heading_negative"
+    },
+    {
+      "container_id": "body/t0000/r0015/c0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "capitalized_heading_negative"
+    },
+    {
+      "container_id": "body/t0015/r0021/c0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "capitalized_heading_negative"
+    },
+    {
+      "container_id": "body/p0711",
+      "review_complete": false,
+      "sample_stratum": "capitalized_heading_negative"
+    },
+    {
+      "container_id": "body/p0097",
+      "review_complete": false,
+      "sample_stratum": "capitalized_heading_negative"
+    },
+    {
+      "container_id": "body/p0041",
+      "review_complete": false,
+      "sample_stratum": "capitalized_heading_negative"
+    },
+    {
+      "container_id": "body/t0018/r0058/c0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "capitalized_heading_negative"
+    },
+    {
+      "container_id": "body/t0001/r0012/c0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "capitalized_heading_negative"
+    },
+    {
+      "container_id": "body/t0017/r0015/c0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "capitalized_heading_negative"
+    },
+    {
+      "container_id": "body/p0035",
+      "review_complete": false,
+      "sample_stratum": "capitalized_heading_negative"
+    },
+    {
+      "container_id": "body/t0015/r0040/c0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "capitalized_heading_negative"
+    },
+    {
+      "container_id": "body/p0155",
+      "review_complete": false,
+      "sample_stratum": "capitalized_heading_negative"
+    },
+    {
+      "container_id": "body/t0000/r0000/c0003/p0000",
+      "review_complete": false,
+      "sample_stratum": "capitalized_heading_negative"
+    },
+    {
+      "container_id": "body/t0018/r0018/c0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "capitalized_heading_negative"
+    },
+    {
+      "container_id": "body/p0308",
+      "review_complete": false,
+      "sample_stratum": "general_unlabelled_candidate"
+    },
+    {
+      "container_id": "body/p0650",
+      "review_complete": false,
+      "sample_stratum": "general_unlabelled_candidate"
+    },
+    {
+      "container_id": "header:/word/header40.xml:default/p0000/txb0000/p0000",
+      "review_complete": false,
+      "sample_stratum": "general_unlabelled_candidate"
+    },
+    {
+      "container_id": "body/p0202",
+      "review_complete": false,
+      "sample_stratum": "general_unlabelled_candidate"
+    },
+    {
+      "container_id": "body/t0018/r0024/c0001/p0000",
+      "review_complete": false,
+      "sample_stratum": "general_unlabelled_candidate"
+    }
+  ]
+}
