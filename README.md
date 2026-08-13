@@ -13,8 +13,9 @@ see [Try it](#try-it).
 
 ## Try it
 
-A browser demo lets you upload a `.docx` and download the redacted result along
-with a per-type replacement count and the verification report.
+A browser demo walks through document analysis, detection methods and confidence,
+a masked replacement preview, verified redaction, residual scanning, and the
+blind evaluation before returning the redacted `.docx`.
 
 ```bash
 .venv/bin/python -m pip install -r requirements.txt

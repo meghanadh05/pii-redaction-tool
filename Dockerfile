@@ -10,6 +10,7 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ ./src/
+COPY docs/blind_evaluation_15a74a6.json ./docs/blind_evaluation_15a74a6.json
 COPY streamlit_app.py ./
 
 EXPOSE 8501
