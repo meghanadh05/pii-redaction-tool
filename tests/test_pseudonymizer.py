@@ -105,3 +105,21 @@ def test_factory_that_reproduces_original_is_rejected() -> None:
 
     with pytest.raises(ValueError, match="distinct valid replacement"):
         pseudonymizer.replacement_for(entity, lambda item, seed: item.text)
+
+
+def test_generated_value_cannot_equal_another_source_entity() -> None:
+    source = person("Alice Smith")
+    first_choice = DeterministicPseudonymizer(SECRET).replacement_for_entity(source)
+    other_source = person(" ".join(first_choice.split()[1:]))
+
+    first = DeterministicPseudonymizer(SECRET)
+    first.forbid_originals((source, other_source))
+    second = DeterministicPseudonymizer(SECRET)
+    second.forbid_originals((source, other_source))
+
+    assert other_source.text.casefold() in first_choice.casefold()
+    assert (
+        other_source.text.casefold()
+        not in first.replacement_for_entity(source).casefold()
+    )
+    assert first.replacement_for_entity(source) == second.replacement_for_entity(source)

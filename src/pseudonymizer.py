@@ -6,7 +6,7 @@ import hashlib
 import hmac
 import ipaddress
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 
@@ -240,6 +240,11 @@ class DeterministicPseudonymizer:
         init=False,
         repr=False,
     )
+    _forbidden_normalized: set[tuple[PIIType, str]] = field(
+        default_factory=set,
+        init=False,
+        repr=False,
+    )
 
     def __post_init__(self) -> None:
         if len(self.secret) < 16:
@@ -258,6 +263,34 @@ class DeterministicPseudonymizer:
     def stable_seed(self, entity: PIIEntity) -> int:
         return int.from_bytes(self._digest(entity)[:8], byteorder="big", signed=False)
 
+    def _contains_forbidden_original(
+        self,
+        entity_type: PIIType,
+        normalized_replacement: str,
+    ) -> bool:
+        return any(
+            forbidden_type is entity_type
+            and re.search(
+                rf"(?<!\w){re.escape(forbidden_value)}(?!\w)",
+                normalized_replacement,
+            )
+            is not None
+            for forbidden_type, forbidden_value in self._forbidden_normalized
+        )
+
+    def forbid_originals(self, entities: Iterable[PIIEntity]) -> None:
+        """Prevent a fake value from reproducing any source value of its type."""
+
+        if self._replacement_cache:
+            raise ValueError("Original-value exclusions must be set before generation")
+        self._forbidden_normalized.update(
+            (
+                entity.entity_type,
+                normalize_entity_text(entity.entity_type, entity.text),
+            )
+            for entity in entities
+        )
+
     def replacement_for(
         self,
         entity: PIIEntity,
@@ -274,6 +307,11 @@ class DeterministicPseudonymizer:
                 if not replacement:
                     continue
                 if normalize_entity_text(entity.entity_type, replacement) == original:
+                    continue
+                if self._contains_forbidden_original(
+                    entity.entity_type,
+                    normalize_entity_text(entity.entity_type, replacement),
+                ):
                     continue
                 if not replacement_passes_validator(entity.entity_type, replacement):
                     continue

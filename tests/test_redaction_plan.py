@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 
 from docx import Document
+from docx.text.paragraph import Paragraph
 
 from src.detector import DetectionEngine
 from src.docx_processor import StoryKind, TextContainer
@@ -43,13 +44,34 @@ class OverlappingDetector:
         ]
 
 
+class LocallyQualifiedPersonRecognizer(Recognizer):
+    name = "locally_qualified_person_test"
+    supported_types = frozenset({PIIType.PERSON})
+
+    def detect(self, text: str) -> list[PIIEntity]:
+        value = "Alice Smith"
+        if not text.startswith("Contact Person:"):
+            return []
+        start = text.index(value)
+        return [
+            PIIEntity(
+                PIIType.PERSON,
+                value,
+                start,
+                start + len(value),
+                0.95,
+                self.name,
+            )
+        ]
+
+
 def container(
     run_texts: list[str],
     container_id: str,
     story: StoryKind,
     *,
     mirror: bool = False,
-) -> tuple[TextContainer, object | None]:
+) -> tuple[TextContainer, Paragraph | None]:
     document = Document()
     paragraph = document.add_paragraph()
     for text in run_texts:
@@ -136,7 +158,7 @@ def test_small_docx_dry_run_does_not_write_or_expose_values(tmp_path: Path) -> N
     source = tmp_path / "source.docx"
     document = Document()
     document.add_paragraph("Contact alice.smith@real.test")
-    document.save(source)
+    document.save(str(source))
     before = source.read_bytes()
 
     report = build_dry_run_report(source, secret=SECRET, key_source="test")
@@ -147,3 +169,30 @@ def test_small_docx_dry_run_does_not_write_or_expose_values(tmp_path: Path) -> N
     assert report["planned_replacements_by_type"]["EMAIL"] == 1  # type: ignore[index]
     serialized = json.dumps(report)
     assert "alice.smith@real.test" not in serialized
+
+
+def test_plan_propagates_high_confidence_exact_repeats_without_overlap() -> None:
+    labelled, _ = container(
+        ["Contact Person: Alice Smith; minutes signed by Alice Smith"],
+        "body/p0000",
+        StoryKind.BODY_PARAGRAPH,
+    )
+    unrelated, _ = container(
+        ["A separate narrative mentions Alice Smith"],
+        "body/p0001",
+        StoryKind.BODY_PARAGRAPH,
+    )
+    containers = (labelled, unrelated)
+    plan = ReplacementPlanner(
+        DetectionEngine([LocallyQualifiedPersonRecognizer()]),
+        DeterministicPseudonymizer(SECRET),
+    ).build(containers)
+
+    assert len(plan.replacements) == 2
+    assert plan.summary()["exact_repeat_propagation_count"] == 1
+    assert len({item.replacement for item in plan.replacements}) == 1
+
+    apply_redaction_plan(containers, plan)
+
+    assert "Alice Smith" not in labelled.text
+    assert "Alice Smith" in unrelated.text

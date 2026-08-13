@@ -1,0 +1,98 @@
+{
+  "report_schema_version": "1.0",
+  "privacy_safe": true,
+  "source": {
+    "path": "input/Red Herring Prospectus.docx",
+    "sha256": "8b5c93f7642d659e64b51be9f6172c86c2825417f376ca1800ed331515e6f929",
+    "unchanged": true
+  },
+  "output": {
+    "path": "output/Red_Herring_Prospectus_Redacted.docx",
+    "sha256": "eee2be557861bab6129f83d69929887b074363155d836732cfca6fcfd81d968d",
+    "size_bytes": 1878807,
+    "reopened_successfully": true,
+    "zip_integrity_valid": true,
+    "required_parts_present": true,
+    "xml_parts_validated": 160
+  },
+  "replacement_plan": {
+    "applied_replacement_count": 648,
+    "direct_detection_replacement_count": 610,
+    "same_container_exact_repeat_replacement_count": 38,
+    "conflict_count": 0,
+    "cross_run_replacement_count": 380,
+    "text_box_replacement_count": 0,
+    "mirrored_representation_update_count": 0,
+    "external_relationship_update_count": 0,
+    "linked_identity_count": 0,
+    "by_type": {
+      "PERSON": 351,
+      "EMAIL": 52,
+      "PHONE": 36,
+      "COMPANY": 148,
+      "ADDRESS": 61,
+      "SSN": 0,
+      "CREDIT_CARD": 0,
+      "DOB": 0,
+      "IP_ADDRESS": 0
+    }
+  },
+  "structural_verification": {
+    "container_count": 4772,
+    "container_id_set_preserved": true,
+    "all_affected_container_text_verified": true,
+    "run_count_preserved": true,
+    "affected_replacements_by_story": {
+      "BODY_PARAGRAPH": 332,
+      "TABLE_CELL_PARAGRAPH": 316
+    }
+  },
+  "residual_supported_text_scan": {
+    "minimum_confidence": 0.85,
+    "high_confidence_detection_count": 306,
+    "exact_known_synthetic_detection_count": 265,
+    "synthetic_contained_detection_count": 37,
+    "known_synthetic_detection_count": 302,
+    "broad_overlap_review_count": 4,
+    "review_required_count": 4,
+    "unclassified_residual_count": 0,
+    "review_required_by_type": {
+      "ADDRESS": 1,
+      "COMPANY": 1,
+      "PERSON": 2
+    },
+    "detections_by_type": {
+      "ADDRESS": 61,
+      "COMPANY": 54,
+      "EMAIL": 52,
+      "PERSON": 103,
+      "PHONE": 36
+    },
+    "interpretation": "Of 306 high-confidence detections, 302 are exact or contained matches to planned synthetic replacements. Four broad spans overlap replacements and require contextual review (two PERSON, one COMPANY, and one ADDRESS); none is wholly unclassified. Zero leakage is not claimed."
+  },
+  "residual_external_relationship_scan": {
+    "external_relationship_count": 0,
+    "high_confidence_detection_count": 0,
+    "unclassified_residual_count": 0
+  },
+  "representative_structural_comparison": {
+    "container_ids_preserved": true,
+    "run_count_preserved": true,
+    "section_count_before_after": [85, 85],
+    "top_level_table_count_before_after": [76, 76],
+    "changed_container_count": 382,
+    "direct_detected_occurrences_confirmed_removed": 610,
+    "direct_detected_occurrences_expected": 610
+  },
+  "unsupported_content": {
+    "raster_image_count": 8,
+    "raster_image_ocr_performed": false,
+    "accessible_description_or_title_count": 98,
+    "selection_pane_name_count": 98,
+    "shape_metadata_automatically_rewritten": false,
+    "shape_metadata_detected_pii_count": 0,
+    "unsupported_story_part_count": 0,
+    "embedded_object_count": 0
+  },
+  "limitations": "Residual scanning covers supported extracted paragraphs, tables, headers, footers, text boxes, and external relationships. Raster-image text was not OCRed, and shape metadata was audited but not rewritten. Zero total-document leakage is not claimed."
+}

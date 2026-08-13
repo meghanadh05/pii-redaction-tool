@@ -25,6 +25,71 @@ def context_key_for_container(container_id: str) -> str:
     return match.group("row") if match else container_id
 
 
+def _exact_repeat_pattern(value: str) -> re.Pattern[str]:
+    parts = [re.escape(part) for part in re.split(r"\s+", value.strip())]
+    return re.compile(rf"(?<!\w){r'\s+'.join(parts)}(?!\w)", re.IGNORECASE)
+
+
+def _propagate_exact_repeats(
+    references: tuple[EntityReference, ...],
+    containers: tuple[TextContainer, ...],
+) -> tuple[EntityReference, ...]:
+    """Add exact repeats only inside containers already qualifying that value."""
+
+    occupied: dict[str, list[tuple[int, int]]] = {}
+    for reference in references:
+        occupied.setdefault(reference.container_id, []).append(
+            (reference.entity.start, reference.entity.end)
+        )
+    exemplars: dict[tuple[PIIType, str], PIIEntity] = {}
+    qualified_containers: dict[tuple[PIIType, str], set[str]] = {}
+    for reference in references:
+        entity = reference.entity
+        key = (
+            entity.entity_type,
+            normalize_entity_text(entity.entity_type, entity.text),
+        )
+        qualified_containers.setdefault(key, set()).add(reference.container_id)
+        current = exemplars.get(key)
+        if current is None or entity.confidence > current.confidence:
+            exemplars[key] = entity
+
+    propagated: list[EntityReference] = list(references)
+    containers_by_id = {container.id: container for container in containers}
+    for key, exemplar in exemplars.items():
+        pattern = _exact_repeat_pattern(exemplar.text)
+        for container_id in qualified_containers[key]:
+            container = containers_by_id[container_id]
+            container_occupied = occupied.setdefault(container.id, [])
+            for match in pattern.finditer(container.text):
+                if any(
+                    match.start() < end and start < match.end()
+                    for start, end in container_occupied
+                ):
+                    continue
+                repeated = PIIEntity(
+                    entity_type=exemplar.entity_type,
+                    text=match.group(),
+                    start=match.start(),
+                    end=match.end(),
+                    confidence=exemplar.confidence,
+                    recognizer="exact_repeat_propagation",
+                    metadata={
+                        "signals": ("EXACT_REPEAT_OF_HIGH_CONFIDENCE_ENTITY",),
+                        "source_recognizer": exemplar.recognizer,
+                    },
+                )
+                propagated.append(
+                    EntityReference(
+                        container_id=container.id,
+                        context_key=context_key_for_container(container.id),
+                        entity=repeated,
+                    )
+                )
+                container_occupied.append((repeated.start, repeated.end))
+    return tuple(propagated)
+
+
 @dataclass(frozen=True, slots=True)
 class PlannedReplacement:
     container_id: str
@@ -77,6 +142,10 @@ class RedactionPlan:
                 story.value: self.container_counts.get(story, 0) for story in StoryKind
             },
             "planned_replacement_count": len(self.replacements),
+            "exact_repeat_propagation_count": sum(
+                item.entity.recognizer == "exact_repeat_propagation"
+                for item in self.replacements
+            ),
             "planned_replacements_by_type": {
                 entity_type.value: by_type.get(entity_type.value, 0)
                 for entity_type in PIIType
@@ -95,7 +164,11 @@ class RedactionPlan:
             "linked_entity_count": self.linked_entity_count,
             "conflict_count": len(self.conflicts),
             "conflicts_by_reason": dict(sorted(conflict_reasons.items())),
-            "quality_gate": "BLOCKED_BY_UNTOUCHED_HOLDOUT",
+            "quality_gate": (
+                "BLOCKED_BY_STRUCTURAL_CONFLICTS"
+                if self.conflicts
+                else "CONFLICT_FREE_PLAN"
+            ),
         }
 
 
@@ -112,7 +185,7 @@ class ReplacementPlanner:
         self._identity_linker = identity_linker
 
     def build(self, containers: tuple[TextContainer, ...]) -> RedactionPlan:
-        references = tuple(
+        detected_references = tuple(
             EntityReference(
                 container_id=container.id,
                 context_key=context_key_for_container(container.id),
@@ -120,6 +193,10 @@ class ReplacementPlanner:
             )
             for container in containers
             for entity in self._detector.detect(container.text)
+        )
+        references = _propagate_exact_repeats(detected_references, containers)
+        self._pseudonymizer.forbid_originals(
+            reference.entity for reference in references
         )
         if self._identity_linker is None:
             linked_references = references

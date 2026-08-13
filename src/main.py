@@ -8,7 +8,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from src import __version__
-from src.redaction import build_dry_run_report, secret_from_environment
+from src.redaction import build_dry_run_report, redact_docx, secret_from_environment
 from src.reporting import detect_docx
 
 
@@ -16,8 +16,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pii-redaction-tool",
         description=(
-            "PII Redaction Tool Phase 2C: privacy-safe hybrid detection and "
-            "replacement planning. Document writing is quality-gated."
+            "Detect PII in DOCX files and replace it with deterministic "
+            "synthetic values while preserving Word structure."
         ),
     )
     parser.add_argument("--version", action="version", version=__version__)
@@ -34,9 +34,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     redact_parser = subparsers.add_parser(
         "redact",
-        help="build a privacy-safe replacement plan; writing remains disabled",
+        help="redact a DOCX, or preflight without writing with --dry-run",
     )
     redact_parser.add_argument("input_path", type=Path)
+    redact_parser.add_argument(
+        "--output",
+        type=Path,
+        help="output DOCX path (required unless --dry-run is used)",
+    )
     redact_parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -45,7 +50,10 @@ def build_parser() -> argparse.ArgumentParser:
     redact_parser.add_argument(
         "--key-env",
         default="PII_REDACTION_KEY",
-        help="environment variable containing a key; otherwise use an ephemeral dry-run key",
+        help=(
+            "environment variable containing at least 16 UTF-8 bytes; required "
+            "for writes and optional for dry runs"
+        ),
     )
     return parser
 
@@ -64,19 +72,29 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 0
     if arguments.command == "redact":
-        if not arguments.dry_run:
-            parser.error(
-                "document writing is disabled because the untouched holdout failed "
-                "the precision/recall gate; use --dry-run"
-            )
         try:
-            secret, key_source = secret_from_environment(arguments.key_env)
-            result = build_dry_run_report(
-                arguments.input_path,
-                secret=secret,
-                key_source=key_source,
+            secret, key_source = secret_from_environment(
+                arguments.key_env,
+                required=not arguments.dry_run,
             )
-        except (FileNotFoundError, ValueError) as error:
+            if arguments.dry_run:
+                result = build_dry_run_report(
+                    arguments.input_path,
+                    secret=secret,
+                    key_source=key_source,
+                )
+            else:
+                if arguments.output is None:
+                    parser.error("--output is required unless --dry-run is used")
+                if secret is None:
+                    raise ValueError("A pseudonymization key is required for writing")
+                result = redact_docx(
+                    arguments.input_path,
+                    arguments.output,
+                    secret=secret,
+                    key_source=key_source,
+                )
+        except (FileNotFoundError, OSError, ValueError) as error:
             parser.error(str(error))
         print(json.dumps(result, indent=2, sort_keys=True))
         return 0

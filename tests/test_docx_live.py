@@ -9,8 +9,8 @@ from docx.opc.constants import RELATIONSHIP_TYPE
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.text.paragraph import Paragraph
-from lxml import etree
-from lxml.etree import _Element
+from lxml import etree  # type: ignore[import-untyped]
+from lxml.etree import _Element  # type: ignore[import-untyped]
 
 from src.docx_processor import (
     EXTRACTOR_SCHEMA_VERSION,
