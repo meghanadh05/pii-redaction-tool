@@ -1,0 +1,48 @@
+{
+  "accepted_detection_count": 88,
+  "container_count": 4680,
+  "containers_by_story": {
+    "BODY_PARAGRAPH": 1006,
+    "FOOTER_PARAGRAPH": 74,
+    "HEADER_PARAGRAPH": 75,
+    "TABLE_CELL_PARAGRAPH": 3525,
+    "TEXT_BOX_PARAGRAPH": 0
+  },
+  "detections_by_type": {
+    "CREDIT_CARD": {
+      "accepted": 0,
+      "average_confidence": null,
+      "cross_run": 0
+    },
+    "DOB": {
+      "accepted": 0,
+      "average_confidence": null,
+      "cross_run": 0
+    },
+    "EMAIL": {
+      "accepted": 52,
+      "average_confidence": 0.99,
+      "cross_run": 0
+    },
+    "IP_ADDRESS": {
+      "accepted": 0,
+      "average_confidence": null,
+      "cross_run": 0
+    },
+    "PHONE": {
+      "accepted": 36,
+      "average_confidence": 0.9772,
+      "cross_run": 24
+    },
+    "SSN": {
+      "accepted": 0,
+      "average_confidence": null,
+      "cross_run": 0
+    }
+  },
+  "privacy_safe": true,
+  "report_schema_version": "1.0",
+  "source_name": "Red Herring Prospectus.docx",
+  "source_sha256": "8b5c93f7642d659e64b51be9f6172c86c2825417f376ca1800ed331515e6f929",
+  "tool_version": "0.2.0-phase2a"
+}

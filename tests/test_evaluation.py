@@ -20,6 +20,7 @@ def test_exact_metrics_do_not_treat_partial_overlap_as_true_positive() -> None:
     assert metrics.precision == 1 / 3
     assert metrics.recall == 1.0
     assert metrics.f1 == 0.5
+    assert metrics.entity_detection_accuracy == 1 / 3
 
 
 def test_same_offsets_in_different_containers_are_distinct() -> None:
@@ -44,4 +45,5 @@ def test_per_type_counts_include_required_categories_with_zero_counts() -> None:
         "precision": 0.0,
         "recall": 0.0,
         "f1": 0.0,
+        "entity_detection_accuracy": None,
     }

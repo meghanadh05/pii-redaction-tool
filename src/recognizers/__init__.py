@@ -1,9 +1,34 @@
-"""PII recognizers.
-
-Phase 1 defines contracts and category ownership. Concrete detection behavior
-is intentionally scheduled for Phase 2.
-"""
+"""PII recognizers and the Phase 2A structured recognizer set."""
 
 from .base import Recognizer
+from .credit_card import CreditCardRecognizer
+from .dob import DOBRecognizer
+from .email import EmailRecognizer
+from .ip_address import IPAddressRecognizer
+from .phone import PhoneRecognizer
+from .ssn import SSNRecognizer
 
-__all__ = ["Recognizer"]
+
+def structured_recognizers() -> tuple[Recognizer, ...]:
+    """Return the deterministic Phase 2A recognizers in explicit order."""
+
+    return (
+        EmailRecognizer(),
+        PhoneRecognizer(),
+        SSNRecognizer(),
+        CreditCardRecognizer(),
+        IPAddressRecognizer(),
+        DOBRecognizer(),
+    )
+
+
+__all__ = [
+    "CreditCardRecognizer",
+    "DOBRecognizer",
+    "EmailRecognizer",
+    "IPAddressRecognizer",
+    "PhoneRecognizer",
+    "Recognizer",
+    "SSNRecognizer",
+    "structured_recognizers",
+]

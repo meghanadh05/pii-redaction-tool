@@ -89,9 +89,9 @@ class PIIEntity:
         self,
         *,
         include_text: bool = False,
-        include_metadata: bool = True,
+        include_metadata: bool = False,
     ) -> dict[str, object]:
-        """Return a JSON-compatible mapping, omitting raw text by default."""
+        """Return a JSON-compatible mapping, omitting PII-bearing data by default."""
 
         result: dict[str, object] = {
             "entity_type": self.entity_type.value,

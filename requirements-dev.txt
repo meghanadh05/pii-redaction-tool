@@ -1,0 +1,6 @@
+-r requirements.txt
+
+# Local quality gates.
+pytest>=9,<10
+ruff>=0.15,<0.16
+mypy>=2.1,<2.2

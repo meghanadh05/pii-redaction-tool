@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from src.models import PIIEntity, PIIType
+from src.models import JSONValue, PIIEntity, PIIType
 from src.pseudonymizer import DeterministicPseudonymizer
 
 
 SECRET = b"phase-one-test-key-material"
 
 
-def person(value: str, **metadata: object) -> PIIEntity:
+def person(value: str, **metadata: JSONValue) -> PIIEntity:
     return PIIEntity(
         PIIType.PERSON,
         value,

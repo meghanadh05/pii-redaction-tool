@@ -27,9 +27,8 @@ The DOCX says:
    its exact unit and denominator.
 3. The specification does not define partial-span matching. Exact matching will
    be primary and ADDRESS will also have a separately labelled relaxed score.
-4. Company names are not always considered personal data in ordinary privacy
-   taxonomies, but they are explicitly mandatory here and will be treated as a
-   required redaction category.
+4. Company names are an assignment-required sensitive entity category and will
+   be treated as a mandatory redaction category.
 5. The Indian prospectus may contain no US SSNs, credit cards, DOBs, or IPs.
    Absence in this file does not remove the detector requirement; synthetic
    unit tests will cover them and metrics will not invent occurrences.

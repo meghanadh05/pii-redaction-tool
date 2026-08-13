@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from src.conflict_resolver import ConflictResolver
-from src.models import PIIEntity, PIIType
+from src.models import JSONValue, PIIEntity, PIIType
 
 
 def entity(
@@ -10,7 +10,7 @@ def entity(
     start: int,
     confidence: float,
     recognizer: str,
-    **metadata: object,
+    **metadata: JSONValue,
 ) -> PIIEntity:
     return PIIEntity(
         entity_type,

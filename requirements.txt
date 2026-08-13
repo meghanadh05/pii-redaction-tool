@@ -1,8 +1,6 @@
-# Runtime dependencies planned for the complete local pipeline.
+# Phase 2A runtime dependencies.
 python-docx>=1.2,<2
-lxml>=5,<7
-spacy>=3.8.14,<3.9
-Faker>=40,<41
+lxml>=6,<7
 
-# Test dependency (kept here because the assignment asks for one install file).
-pytest>=8,<10
+# spaCy and Faker are intentionally deferred until semantic recognition and
+# pseudonym generation are implemented in later phases.

@@ -48,7 +48,14 @@ class MetricCounts:
         denominator = self.precision + self.recall
         return 2 * self.precision * self.recall / denominator if denominator else 0.0
 
-    def to_dict(self) -> dict[str, float | int]:
+    @property
+    def entity_detection_accuracy(self) -> float | None:
+        """Exact entity-set accuracy (Jaccard), without inflated true negatives."""
+
+        denominator = self.true_positives + self.false_positives + self.false_negatives
+        return self.true_positives / denominator if denominator else None
+
+    def to_dict(self) -> dict[str, float | int | None]:
         return {
             "tp": self.true_positives,
             "fp": self.false_positives,
@@ -56,6 +63,7 @@ class MetricCounts:
             "precision": self.precision,
             "recall": self.recall,
             "f1": self.f1,
+            "entity_detection_accuracy": self.entity_detection_accuracy,
         }
 
 
