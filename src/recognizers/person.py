@@ -22,56 +22,128 @@ _DIRECT_ROLE_PREFIX = re.compile(
     r"(?i)(?:contact\s+persons?\s*:\s*|\b(?:being|namely),?\s+|"
     r"\b(?:CEO|CFO)\s*:\s*)[^.;:]{0,28}$"
 )
-_REGION_STOP = re.compile(
-    r"(?i)(?:[.;]|,\s*(?:company\s+secretary|compliance\s+officer|director|"
-    r"chairman|CEO|CFO)\b|\b(?:telephone|phone|mobile|e-?mail|website|for\s+further|"
-    r"are\s+the\s+promoters?|is\s+the\s+promoter)\b)"
+_ROLE_TITLE_PATTERN = (
+    r"(?:chairman|chairperson|(?:non[- ]executive|executive|independent|"
+    r"whole[- ]time|managing|joint\s+managing)?\s*director|"
+    r"chief\s+(?:executive|financial|operating|risk)\s+officer|"
+    r"company\s+secretary|compliance\s+officer|CEO|CFO)"
 )
-_LIST_SEPARATOR = re.compile(r"\s*(?:/|,|\band\b)\s*", re.IGNORECASE)
+_TRAILING_ROLE_ANNOTATION = re.compile(
+    rf"(?i)(?:\s*\(\s*{_ROLE_TITLE_PATTERN}\s*\)|"
+    rf"\s*[-–—]\s*{_ROLE_TITLE_PATTERN})\s*$"
+)
+_REGION_STOP = re.compile(
+    r"(?i)(?:[.]|,\s*(?:company\s+secretary|compliance\s+officer|director|"
+    r"chairman|CEO|CFO)\b|\b(?:telephone|phone|mobile|e-?mail|website|for\s+further|"
+    r"are\s+the\s+promoters?|is\s+the\s+promoter|responsible\s+for|"
+    r"who|whose|which|shall|will|having)\b)"
+)
+_LIST_SEPARATOR = re.compile(r"\s*(?:/|,|;|\band\b)\s*", re.IGNORECASE)
 _GENERIC_WORDS = frozenset(
     {
         "address",
+        "advisory",
         "apartment",
+        "applicable",
         "association",
+        "associates",
         "audit",
+        "authority",
+        "avenue",
         "bank",
         "board",
         "branch",
         "building",
         "business",
         "campus",
+        "capital",
         "centre",
+        "chairman",
+        "chairperson",
+        "chief",
+        "city",
+        "clause",
         "committee",
         "company",
         "complex",
+        "compliance",
+        "controls",
+        "corporate",
+        "council",
         "department",
+        "director",
         "directors",
+        "estate",
+        "exchange",
+        "executive",
         "factors",
+        "financial",
+        "flat",
         "floor",
+        "foundation",
+        "framework",
         "government",
+        "governance",
         "hospital",
+        "house",
         "india",
+        "industrial",
+        "industries",
+        "institute",
+        "internal",
         "international",
+        "law",
+        "lane",
         "limited",
         "management",
+        "managing",
+        "nagar",
         "office",
+        "officer",
+        "management",
         "offer",
+        "operating",
         "parents",
+        "park",
+        "partners",
+        "plaza",
+        "plot",
+        "policy",
+        "promoter",
+        "promoters",
+        "provisions",
+        "pursuant",
         "registrar",
+        "regulation",
+        "report",
+        "responsibilities",
         "risk",
         "road",
+        "secretary",
+        "section",
         "securities",
+        "services",
+        "shareholder",
         "station",
+        "street",
+        "subject",
+        "terms",
         "tower",
         "trust",
+        "university",
     }
 )
 
 
 def _clean_span(text: str, start: int, end: int) -> tuple[int, int]:
-    while start < end and text[start] in " \t,;:/()":
+    while start < end and text[start] in " \t,;:/([":
         start += 1
-    while end > start and text[end - 1] in " \t,;:/*()":
+    while end > start and text[end - 1] in " \t,;:/*":
+        end -= 1
+    role_annotation = _TRAILING_ROLE_ANNOTATION.search(text, start, end)
+    if role_annotation:
+        end = role_annotation.start()
+    while end > start and text[end - 1] in " \t,;:/*)]":
         end -= 1
     honorific = re.match(r"(?i)(?:Mr|Mrs|Ms|Dr)\.?\s+", text[start:end])
     if honorific:
@@ -169,8 +241,11 @@ class PersonRecognizer(Recognizer):
         for ner_span in self._provider.entities(text):
             if ner_span.label not in {"PERSON", "ORG"}:
                 continue
-            span_value = text[ner_span.start : ner_span.end]
-            list_like = bool(_LIST_SEPARATOR.search(span_value))
+            split_spans = _split_parts(text, ner_span.start, ner_span.end)
+            list_like = len(split_spans) > 1
+            person_shaped_list = list_like and all(
+                self._looks_like_person(text[start:end]) for start, end in split_spans
+            )
             locally_qualified = any(
                 region_start <= ner_span.start < region_end
                 for region_start, region_end in role_regions
@@ -179,9 +254,11 @@ class PersonRecognizer(Recognizer):
                     text[max(0, ner_span.start - 70) : ner_span.start]
                 )
             )
-            if ner_span.label == "ORG" and not (locally_qualified or list_like):
+            if ner_span.label == "ORG" and not (
+                locally_qualified or person_shaped_list
+            ):
                 continue
-            for start, end in _split_parts(text, ner_span.start, ner_span.end):
+            for start, end in split_spans:
                 signals = ["NER_PERSON" if ner_span.label == "PERSON" else "NER_ORG"]
                 confidence = 0.84 if ner_span.label == "PERSON" else 0.72
                 if list_like:

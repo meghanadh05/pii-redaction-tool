@@ -252,3 +252,71 @@ def test_address_trims_company_prefix_and_rejects_location_only() -> None:
 
     assert [item.text for item in results] == ["Flat 4, Cedar Road, Pune 411002, India"]
     assert AddressRecognizer(FixedProvider()).detect("Pune, Maharashtra, India") == []
+
+
+def test_person_rejects_titles_and_capitalized_legal_prose_in_role_region() -> None:
+    text = (
+        "Directors: Executive Director, Chief Operating Officer and "
+        "Subject To Applicable Law."
+    )
+
+    assert PersonRecognizer(FixedProvider()).detect(text) == []
+
+
+def test_person_role_list_rejects_organization_and_address_fragments() -> None:
+    text = (
+        "Promoters: Meridian Advisory Services, Cedar Industrial Estate and "
+        "ANAYA VARMAN."
+    )
+
+    results = PersonRecognizer(FixedProvider()).detect(text)
+
+    assert [item.text for item in results] == ["ANAYA VARMAN"]
+
+
+def test_person_org_list_needs_person_shape_or_explicit_local_role() -> None:
+    organization_list = "Northstar Advisory / Meridian Capital"
+    broad_org = FixedProvider((NERSpan("ORG", 0, len(organization_list)),))
+
+    assert PersonRecognizer(broad_org).detect(organization_list) == []
+
+    locally_labelled = "Contact Person: Devika Senvar"
+    start = locally_labelled.index("Devika")
+    local_org = FixedProvider((NERSpan("ORG", start, start + len("Devika Senvar")),))
+    assert [
+        item.text for item in PersonRecognizer(local_org).detect(locally_labelled)
+    ] == ["Devika Senvar"]
+
+
+def test_person_splits_long_semicolon_list_and_trims_role_annotations() -> None:
+    text = (
+        "Directors: ANAYA VARMAN – Chairperson; ROHAN SENVAR - "
+        "Non-Executive Director; MEERA KAPURAN (CFO)."
+    )
+
+    results = PersonRecognizer(FixedProvider()).detect(text)
+
+    assert [item.text for item in results] == [
+        "ANAYA VARMAN",
+        "ROHAN SENVAR",
+        "MEERA KAPURAN",
+    ]
+
+
+def test_person_role_region_stops_before_narrative_responsibilities() -> None:
+    text = (
+        "Directors are responsible for Internal Controls and "
+        "Corporate Governance Framework."
+    )
+
+    assert PersonRecognizer(FixedProvider()).detect(text) == []
+
+
+def test_person_ner_rejects_legal_organization_and_address_phrases() -> None:
+    for value in (
+        "Pursuant To Applicable Law",
+        "Meridian Capital Partners",
+        "Cedar Industrial Estate",
+    ):
+        provider = FixedProvider((NERSpan("PERSON", 0, len(value)),))
+        assert PersonRecognizer(provider).detect(value) == []
