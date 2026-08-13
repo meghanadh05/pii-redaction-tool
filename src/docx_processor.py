@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from types import MappingProxyType
-from typing import Iterator, Mapping, Sequence
+from typing import Iterator, Mapping, Sequence, cast
 
 from docx import Document
 from docx.document import Document as DocumentObject
@@ -14,10 +14,23 @@ from docx.enum.section import WD_HEADER_FOOTER
 from docx.oxml.ns import qn
 from docx.oxml.table import CT_Tbl
 from docx.oxml.text.paragraph import CT_P
+from docx.oxml.text.run import CT_R
 from docx.section import _Footer, _Header
 from docx.table import Table, _Cell
 from docx.text.paragraph import Paragraph
 from docx.text.run import Run
+from lxml.etree import _Element  # type: ignore[import-untyped]
+
+
+EXTRACTOR_SCHEMA_VERSION = "1.0"
+
+_MC_NAMESPACE = "http://schemas.openxmlformats.org/markup-compatibility/2006"
+_MC_ALTERNATE_CONTENT = f"{{{_MC_NAMESPACE}}}AlternateContent"
+_MC_CHOICE = f"{{{_MC_NAMESPACE}}}Choice"
+_MC_FALLBACK = f"{{{_MC_NAMESPACE}}}Fallback"
+_W_PARAGRAPH = qn("w:p")
+_W_RUN = qn("w:r")
+_W_TEXTBOX_CONTENT = qn("w:txbxContent")
 
 
 class StoryKind(str, Enum):
@@ -156,6 +169,42 @@ _SAFE_REWRITE_TAGS = frozenset(
 )
 
 
+def _runs_for_paragraph(paragraph: Paragraph) -> tuple[Run, ...]:
+    """Return direct paragraph runs, including runs nested in hyperlinks."""
+
+    run_elements: list[CT_R] = []
+    for element in paragraph._p.iter(_W_RUN):
+        nearest_paragraph = next(
+            (
+                ancestor
+                for ancestor in element.iterancestors()
+                if ancestor.tag == _W_PARAGRAPH
+            ),
+            None,
+        )
+        if nearest_paragraph is paragraph._p:
+            run_elements.append(cast(CT_R, element))
+    return tuple(Run(element, paragraph) for element in run_elements)
+
+
+@dataclass(slots=True)
+class TextRepresentation:
+    """One OOXML representation of text mirrored elsewhere in the package."""
+
+    paragraph: Paragraph
+    logical: LogicalText
+    runs: tuple[Run, ...]
+
+    @classmethod
+    def from_paragraph(cls, paragraph: Paragraph) -> "TextRepresentation":
+        runs = _runs_for_paragraph(paragraph)
+        return cls(
+            paragraph=paragraph,
+            logical=LogicalText.from_run_texts([run.text for run in runs]),
+            runs=runs,
+        )
+
+
 @dataclass(slots=True)
 class TextContainer:
     """One independently rewritable paragraph and its logical run map."""
@@ -166,12 +215,17 @@ class TextContainer:
     logical: LogicalText
     runs: tuple[Run, ...]
     metadata: Mapping[str, str | int]
+    mirrors: tuple[TextRepresentation, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.id.strip():
             raise ValueError("TextContainer id must be non-empty")
         if len(self.runs) != len(self.logical.run_texts):
             raise ValueError("Run objects and logical run texts must align")
+        if any(mirror.logical.text != self.logical.text for mirror in self.mirrors):
+            raise ValueError(
+                "Mirrored text representations must have equal logical text"
+            )
         self.metadata = MappingProxyType(dict(self.metadata))
 
     @classmethod
@@ -182,12 +236,11 @@ class TextContainer:
         container_id: str,
         story_type: StoryKind,
         metadata: Mapping[str, str | int] | None = None,
+        mirror_paragraphs: Sequence[Paragraph] = (),
     ) -> "TextContainer":
-        # paragraph.runs omits runs nested in hyperlinks. Direct OOXML traversal
-        # includes those runs while count(ancestor::w:p)=1 excludes text-box
-        # paragraphs nested inside a drawing in this paragraph.
-        run_elements = paragraph._p.xpath(".//w:r[count(ancestor::w:p) = 1]")
-        runs = tuple(Run(element, paragraph) for element in run_elements)
+        # paragraph.runs omits runs nested in hyperlinks. Direct traversal keeps
+        # those runs while excluding paragraphs nested inside text boxes.
+        runs = _runs_for_paragraph(paragraph)
         logical = LogicalText.from_run_texts([run.text for run in runs])
         return cls(
             id=container_id,
@@ -196,6 +249,9 @@ class TextContainer:
             logical=logical,
             runs=runs,
             metadata=metadata or {},
+            mirrors=tuple(
+                TextRepresentation.from_paragraph(item) for item in mirror_paragraphs
+            ),
         )
 
     @property
@@ -214,30 +270,237 @@ class TextContainer:
         rejected before any mutation so embedded content cannot be discarded.
         """
 
-        rewritten = self.logical.rewrite_runs(replacements)
-        changed = [
-            index
-            for index, (before, after) in enumerate(
-                zip(self.logical.run_texts, rewritten, strict=True)
+        if self.metadata.get("rewrite_safe") == "false":
+            raise UnsupportedRunContentError(
+                f"Container {self.id!r} has unmatched text-box representations"
             )
-            if before != after
-        ]
-        for index in changed:
-            unsupported = [
-                child.tag
-                for child in self.runs[index]._r
-                if child.tag not in _SAFE_REWRITE_TAGS
-            ]
-            if unsupported:
-                raise UnsupportedRunContentError(
-                    f"Container {self.id!r} run {index} contains unsupported XML"
+
+        representations = (
+            TextRepresentation(self.paragraph, self.logical, self.runs),
+            *self.mirrors,
+        )
+        plans: list[tuple[TextRepresentation, tuple[str, ...], list[int]]] = []
+        for representation in representations:
+            rewritten = representation.logical.rewrite_runs(replacements)
+            changed = [
+                index
+                for index, (before, after) in enumerate(
+                    zip(representation.logical.run_texts, rewritten, strict=True)
                 )
-        for index in changed:
-            self.runs[index].text = rewritten[index]
-        self.logical = LogicalText.from_run_texts([run.text for run in self.runs])
+                if before != after
+            ]
+            plans.append((representation, rewritten, changed))
+
+        for representation, _, changed in plans:
+            for index in changed:
+                unsupported = [
+                    child.tag
+                    for child in representation.runs[index]._r
+                    if child.tag not in _SAFE_REWRITE_TAGS
+                ]
+                if unsupported:
+                    raise UnsupportedRunContentError(
+                        f"Container {self.id!r} contains unsupported run XML"
+                    )
+
+        for representation, rewritten, changed in plans:
+            for index in changed:
+                representation.runs[index].text = rewritten[index]
+            representation.logical = LogicalText.from_run_texts(
+                [run.text for run in representation.runs]
+            )
+
+        self.logical = plans[0][0].logical
 
 
 StoryParent = DocumentObject | _Header | _Footer | _Cell
+
+
+def _paragraphs_in_textbox(
+    content: _Element, parent: StoryParent
+) -> tuple[Paragraph, ...]:
+    paragraphs: list[Paragraph] = []
+    for element in content.iter(_W_PARAGRAPH):
+        nearest_content = next(
+            (
+                ancestor
+                for ancestor in element.iterancestors()
+                if ancestor.tag == _W_TEXTBOX_CONTENT
+            ),
+            None,
+        )
+        if nearest_content is content:
+            paragraphs.append(Paragraph(cast(CT_P, element), parent))
+    return tuple(paragraphs)
+
+
+def _paragraph_text(paragraph: Paragraph) -> str:
+    return "".join(run.text for run in _runs_for_paragraph(paragraph))
+
+
+def _branch_textboxes(branch: _Element) -> tuple[_Element, ...]:
+    return tuple(branch.iter(_W_TEXTBOX_CONTENT))
+
+
+def _unpaired_textbox_containers(
+    contents: Sequence[_Element],
+    *,
+    parent: StoryParent,
+    base_id: str,
+    box_index: int,
+    branch_name: str,
+    parent_story_type: StoryKind,
+) -> Iterator[TextContainer]:
+    for content_index, content in enumerate(contents):
+        for paragraph_index, paragraph in enumerate(
+            _paragraphs_in_textbox(content, parent)
+        ):
+            yield TextContainer.from_paragraph(
+                paragraph,
+                container_id=(
+                    f"{base_id}/txb{box_index + content_index:04d}/"
+                    f"{branch_name}/p{paragraph_index:04d}"
+                ),
+                story_type=StoryKind.TEXT_BOX_PARAGRAPH,
+                metadata={
+                    "parent_story_type": parent_story_type.value,
+                    "mirror_status": "unmatched",
+                    "rewrite_safe": "false",
+                },
+            )
+
+
+def _iter_textbox_containers(
+    paragraph: Paragraph,
+    *,
+    parent: StoryParent,
+    base_id: str,
+    parent_story_type: StoryKind,
+) -> Iterator[TextContainer]:
+    """Yield one logical container per text-box paragraph.
+
+    Microsoft Word commonly stores the same visible text twice inside one
+    ``mc:AlternateContent`` node: a DrawingML choice and a VML fallback. Equal
+    representations are paired so detection occurs once and rewriting updates
+    both branches atomically.
+    """
+
+    box_index = 0
+    alternate_contents = tuple(paragraph._p.iter(_MC_ALTERNATE_CONTENT))
+    for alternate in alternate_contents:
+        choices = tuple(child for child in alternate if child.tag == _MC_CHOICE)
+        fallbacks = tuple(child for child in alternate if child.tag == _MC_FALLBACK)
+        if len(choices) != 1 or len(fallbacks) != 1:
+            for branch_index, branch in enumerate((*choices, *fallbacks)):
+                contents = _branch_textboxes(branch)
+                yield from _unpaired_textbox_containers(
+                    contents,
+                    parent=parent,
+                    base_id=base_id,
+                    box_index=box_index,
+                    branch_name=f"branch{branch_index:02d}",
+                    parent_story_type=parent_story_type,
+                )
+                box_index += len(contents)
+            continue
+
+        choice_contents = _branch_textboxes(choices[0])
+        fallback_contents = _branch_textboxes(fallbacks[0])
+        if len(choice_contents) != len(fallback_contents):
+            yield from _unpaired_textbox_containers(
+                choice_contents,
+                parent=parent,
+                base_id=base_id,
+                box_index=box_index,
+                branch_name="choice",
+                parent_story_type=parent_story_type,
+            )
+            box_index += len(choice_contents)
+            yield from _unpaired_textbox_containers(
+                fallback_contents,
+                parent=parent,
+                base_id=base_id,
+                box_index=box_index,
+                branch_name="fallback",
+                parent_story_type=parent_story_type,
+            )
+            box_index += len(fallback_contents)
+            continue
+
+        for choice_content, fallback_content in zip(
+            choice_contents, fallback_contents, strict=True
+        ):
+            choice_paragraphs = _paragraphs_in_textbox(choice_content, parent)
+            fallback_paragraphs = _paragraphs_in_textbox(fallback_content, parent)
+            texts_match = len(choice_paragraphs) == len(fallback_paragraphs) and all(
+                _paragraph_text(choice) == _paragraph_text(fallback)
+                for choice, fallback in zip(
+                    choice_paragraphs, fallback_paragraphs, strict=True
+                )
+            )
+            if not texts_match:
+                yield from _unpaired_textbox_containers(
+                    (choice_content,),
+                    parent=parent,
+                    base_id=base_id,
+                    box_index=box_index,
+                    branch_name="choice",
+                    parent_story_type=parent_story_type,
+                )
+                yield from _unpaired_textbox_containers(
+                    (fallback_content,),
+                    parent=parent,
+                    base_id=base_id,
+                    box_index=box_index + 1,
+                    branch_name="fallback",
+                    parent_story_type=parent_story_type,
+                )
+                box_index += 2
+                continue
+
+            for paragraph_index, (choice, fallback) in enumerate(
+                zip(choice_paragraphs, fallback_paragraphs, strict=True)
+            ):
+                yield TextContainer.from_paragraph(
+                    choice,
+                    container_id=(
+                        f"{base_id}/txb{box_index:04d}/p{paragraph_index:04d}"
+                    ),
+                    story_type=StoryKind.TEXT_BOX_PARAGRAPH,
+                    metadata={
+                        "parent_story_type": parent_story_type.value,
+                        "mirror_status": "choice_fallback_paired",
+                        "mirror_count": 1,
+                        "rewrite_safe": "true",
+                    },
+                    mirror_paragraphs=(fallback,),
+                )
+            box_index += 1
+
+    standalone_contents = [
+        content
+        for content in paragraph._p.iter(_W_TEXTBOX_CONTENT)
+        if not any(
+            ancestor.tag == _MC_ALTERNATE_CONTENT
+            for ancestor in content.iterancestors()
+        )
+    ]
+    for content in standalone_contents:
+        for paragraph_index, textbox_paragraph in enumerate(
+            _paragraphs_in_textbox(content, parent)
+        ):
+            yield TextContainer.from_paragraph(
+                textbox_paragraph,
+                container_id=f"{base_id}/txb{box_index:04d}/p{paragraph_index:04d}",
+                story_type=StoryKind.TEXT_BOX_PARAGRAPH,
+                metadata={
+                    "parent_story_type": parent_story_type.value,
+                    "mirror_status": "single_representation",
+                    "mirror_count": 0,
+                    "rewrite_safe": "true",
+                },
+            )
+        box_index += 1
 
 
 def _iter_story_blocks(parent: StoryParent) -> Iterator[Paragraph | Table]:
@@ -281,6 +544,12 @@ def _iter_table_containers(
                             "cell_index": cell_index,
                         },
                     )
+                    yield from _iter_textbox_containers(
+                        block,
+                        parent=cell,
+                        base_id=container_id,
+                        parent_story_type=story_type,
+                    )
                     paragraph_index += 1
                 else:
                     yield from _iter_table_containers(
@@ -302,10 +571,17 @@ def _iter_root_containers(
     table_index = 0
     for block in _iter_story_blocks(parent):
         if isinstance(block, Paragraph):
+            container_id = f"{story_prefix}/p{paragraph_index:04d}"
             yield TextContainer.from_paragraph(
                 block,
-                container_id=f"{story_prefix}/p{paragraph_index:04d}",
+                container_id=container_id,
                 story_type=paragraph_story_type,
+            )
+            yield from _iter_textbox_containers(
+                block,
+                parent=parent,
+                base_id=container_id,
+                parent_story_type=paragraph_story_type,
             )
             paragraph_index += 1
         else:
@@ -336,10 +612,11 @@ def _has_story_reference(section: object, reference_type: object, tag: str) -> b
 
 
 def iter_text_containers(document: DocumentObject) -> Iterator[TextContainer]:
-    """Yield body, table, header, and footer paragraphs deterministically.
+    """Yield ordinary and paired text-box paragraphs deterministically.
 
     Header/footer parts are keyed by package part name and emitted once even if
-    multiple sections share them.
+    multiple sections share them. Existing ordinary-container IDs remain stable
+    as text-box IDs are nested beneath their containing paragraph ID.
     """
 
     yield from _iter_root_containers(

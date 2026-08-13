@@ -8,14 +8,52 @@ from docx.enum.section import WD_SECTION
 from docx.opc.constants import RELATIONSHIP_TYPE
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.text.paragraph import Paragraph
+from lxml import etree
+from lxml.etree import _Element
 
 from src.docx_processor import (
+    EXTRACTOR_SCHEMA_VERSION,
     StoryKind,
     TextContainer,
     TextReplacement,
     UnsupportedRunContentError,
     iter_text_containers,
 )
+
+
+MC_NAMESPACE = "http://schemas.openxmlformats.org/markup-compatibility/2006"
+
+
+def _textbox_content(run_texts: list[str]) -> _Element:
+    content = OxmlElement("w:txbxContent")
+    paragraph = OxmlElement("w:p")
+    for value in run_texts:
+        run = OxmlElement("w:r")
+        text = OxmlElement("w:t")
+        text.text = value
+        run.append(text)
+        paragraph.append(run)
+    content.append(paragraph)
+    return content
+
+
+def add_alternate_textbox(
+    paragraph: Paragraph,
+    *,
+    choice_runs: list[str],
+    fallback_runs: list[str],
+) -> None:
+    alternate = etree.Element(
+        f"{{{MC_NAMESPACE}}}AlternateContent",
+        nsmap={"mc": MC_NAMESPACE},
+    )
+    choice = etree.SubElement(alternate, f"{{{MC_NAMESPACE}}}Choice")
+    choice.set("Requires", "wps")
+    choice.append(_textbox_content(choice_runs))
+    fallback = etree.SubElement(alternate, f"{{{MC_NAMESPACE}}}Fallback")
+    fallback.append(_textbox_content(fallback_runs))
+    paragraph._p.append(alternate)
 
 
 def make_container(run_texts: list[str]) -> TextContainer:
@@ -255,3 +293,70 @@ def test_hyperlink_runs_are_extracted_and_rewritten_without_losing_relationship(
     hyperlink_elements = reopened.paragraphs[0]._p.xpath("./w:hyperlink")
     assert len(hyperlink_elements) == 1
     assert hyperlink_elements[0].get(qn("r:id")) == relationship_id
+
+
+def test_choice_fallback_textbox_is_detected_once_and_rewritten_twice(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "textbox.docx"
+    document = Document()
+    outer = document.add_paragraph("Outer text")
+    add_alternate_textbox(
+        outer,
+        choice_runs=["old@", "example.test"],
+        fallback_runs=["old@example", ".test"],
+    )
+
+    containers = tuple(iter_text_containers(document))
+    textboxes = [
+        container
+        for container in containers
+        if container.story_type is StoryKind.TEXT_BOX_PARAGRAPH
+    ]
+
+    assert EXTRACTOR_SCHEMA_VERSION == "1.0"
+    assert len(textboxes) == 1
+    assert textboxes[0].text == "old@example.test"
+    assert len(textboxes[0].mirrors) == 1
+    assert textboxes[0].metadata["mirror_status"] == "choice_fallback_paired"
+
+    textboxes[0].rewrite(
+        [TextReplacement(0, len(textboxes[0].text), "new@example.com")]
+    )
+    assert textboxes[0].text == "new@example.com"
+    assert textboxes[0].mirrors[0].logical.text == "new@example.com"
+    document.save(str(output))
+
+    reopened = tuple(iter_text_containers(Document(str(output))))
+    reopened_textboxes = [
+        container
+        for container in reopened
+        if container.story_type is StoryKind.TEXT_BOX_PARAGRAPH
+    ]
+    assert len(reopened_textboxes) == 1
+    assert reopened_textboxes[0].text == "new@example.com"
+    assert reopened_textboxes[0].mirrors[0].logical.text == "new@example.com"
+
+
+def test_mismatched_choice_fallback_is_visible_but_not_rewritable() -> None:
+    document = Document()
+    outer = document.add_paragraph()
+    add_alternate_textbox(
+        outer,
+        choice_runs=["Choice value"],
+        fallback_runs=["Fallback value"],
+    )
+
+    textboxes = [
+        container
+        for container in iter_text_containers(document)
+        if container.story_type is StoryKind.TEXT_BOX_PARAGRAPH
+    ]
+
+    assert [container.text for container in textboxes] == [
+        "Choice value",
+        "Fallback value",
+    ]
+    assert all(container.metadata["rewrite_safe"] == "false" for container in textboxes)
+    with pytest.raises(UnsupportedRunContentError):
+        textboxes[0].rewrite([TextReplacement(0, len(textboxes[0].text), "New")])
