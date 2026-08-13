@@ -39,10 +39,12 @@ MAX_PREVIEW_ROWS = 100
 PROJECT_ROOT = Path(__file__).resolve().parent
 BLIND_RESULT_PATH = PROJECT_ROOT / "docs" / "blind_evaluation_15a74a6.json"
 
-# Categorical chart hues, validated for chroma, surface contrast, and
-# colour-vision-deficiency separation in both light and dark surfaces.
-SERIES_PRECISION = "#2a78d6"
-SERIES_RECALL = "#eb6834"
+# Chart series hues. Validated against the #07111F surface for lightness,
+# chroma, 3:1 contrast, and colour-vision-deficiency separation. The brand
+# cyan/teal pair is deliberately NOT used here: at normal vision the two are
+# only ΔE 6.9 apart, far below the 15 floor, so they cannot encode two series.
+SERIES_PRECISION = "#0891B2"
+SERIES_RECALL = "#D97706"
 
 DETECTION_METHODS = {
     PIIType.PERSON: "local spaCy NER + role context",
@@ -58,47 +60,99 @@ DETECTION_METHODS = {
 
 APP_CSS = """
 <style>
-    .stApp { background: #f7f9fc; }
-    .block-container { max-width: 1180px; padding-top: 2rem; }
-    .hero {
-        padding: 2.1rem 2.2rem;
-        border: 1px solid #dbe5f0;
-        border-radius: 22px;
-        background: linear-gradient(135deg, #0b2039 0%, #123c55 58%, #126e73 100%);
-        box-shadow: 0 16px 42px rgba(13, 43, 67, .14);
-        color: white;
-        margin-bottom: 1rem;
+    :root {
+        --bg: #07111F; --card: #0D1B2A; --elevated: #132337;
+        --accent: #22D3EE; --accent-2: #2DD4BF;
+        --ink: #F8FAFC; --ink-dim: #94A3B8;
+        --ok: #22C55E; --warn: #F59E0B; --risk: #F43F5E;
+        --line: #1E3350;
     }
-    .hero h1 { color: white; margin: 0 0 .35rem; font-size: 2.55rem; }
-    .hero p { color: #dcebf2; margin: 0; font-size: 1.08rem; }
-    .capabilities { display: flex; flex-wrap: wrap; gap: .55rem; margin: 1rem 0 .2rem; }
-    .capability {
-        background: rgba(255,255,255,.11); border: 1px solid rgba(255,255,255,.22);
-        border-radius: 999px; padding: .38rem .72rem; font-size: .83rem; color: #f6fbff;
-    }
-    .section-kicker { color: #087f78; font-weight: 750; letter-spacing: .08em;
-        text-transform: uppercase; font-size: .75rem; margin-bottom: .2rem; }
-    .feature-card {
-        min-height: 205px; padding: 1.2rem; border: 1px solid #dce5ee;
-        border-radius: 16px; background: white; box-shadow: 0 5px 18px rgba(22,49,75,.05);
-    }
-    .feature-card h3 { margin: .55rem 0; font-size: 1.06rem; color: #123c55; }
-    .feature-card p { color: #536476; font-size: .9rem; line-height: 1.5; }
-    .feature-icon { font-size: 1.45rem; }
-    .mini-code { background: #edf5f7; color: #173b4c; border-radius: 9px;
-        padding: .55rem .7rem; font-family: ui-monospace, monospace; font-size: .76rem; }
-    .pipeline { display: flex; flex-wrap: wrap; align-items: center; gap: .38rem;
-        margin: 1rem 0 1.35rem; }
-    .pipeline-step { background: white; border: 1px solid #cedce7; color: #173b4c;
-        border-radius: 9px; padding: .48rem .68rem; font-weight: 650; font-size: .82rem; }
-    .pipeline-arrow { color: #0a7d78; font-weight: 800; }
-    .privacy-note { border-left: 4px solid #087f78; background: #eaf7f5;
-        border-radius: 6px; padding: .8rem 1rem; color: #244753; }
-    .metric-label { color: #607285; font-size: .78rem; text-transform: uppercase;
-        letter-spacing: .05em; }
-    div[data-testid="stMetric"] { background: white; border: 1px solid #dce5ee;
-        border-radius: 14px; padding: .8rem 1rem; }
-    div[data-testid="stTabs"] button { font-weight: 650; }
+    .stApp { background: var(--bg); }
+    .block-container { max-width: 1180px; padding-top: 2.2rem; }
+
+    .kicker { color: var(--accent); font-weight: 700; letter-spacing: .16em;
+        text-transform: uppercase; font-size: .72rem; margin-bottom: .5rem; }
+    .hero-title { color: var(--ink); font-size: 2.7rem; font-weight: 700;
+        line-height: 1.1; margin: 0 0 .5rem; letter-spacing: -.02em; }
+    .hero-sub { color: var(--ink-dim); font-size: 1.02rem; margin: 0 0 1.1rem;
+        max-width: 60ch; line-height: 1.55; }
+    .hero-sub strong { color: var(--accent-2); font-weight: 600; }
+
+    .capabilities { display: flex; flex-wrap: wrap; gap: .45rem; margin: 0 0 .3rem; }
+    .capability { background: rgba(34,211,238,.07); border: 1px solid rgba(34,211,238,.25);
+        border-radius: 999px; padding: .32rem .8rem; font-size: .78rem;
+        color: var(--accent); font-weight: 500; letter-spacing: .01em; }
+
+    .stages { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem;
+        margin: .2rem 0 .4rem; }
+    .stage { display: flex; align-items: center; gap: .45rem; padding: .5rem .9rem;
+        border-radius: 10px; font-size: .84rem; font-weight: 600;
+        border: 1px solid var(--line); background: var(--card); color: var(--ink-dim); }
+    .stage.done { border-color: rgba(34,197,94,.45); color: var(--ok);
+        background: rgba(34,197,94,.08); }
+    .stage.active { border-color: rgba(34,211,238,.55); color: var(--accent);
+        background: rgba(34,211,238,.10); }
+    .stage-arrow { color: var(--line); font-weight: 700; }
+
+    .card { padding: 1.15rem 1.25rem; border: 1px solid var(--line);
+        border-radius: 14px; background: var(--card); height: 100%; }
+    .card h3 { margin: .1rem 0 .5rem; font-size: 1rem; color: var(--ink);
+        font-weight: 650; }
+    .card p { color: var(--ink-dim); font-size: .87rem; line-height: 1.55; margin: 0; }
+    .card-tag { color: var(--accent); font-size: .7rem; font-weight: 700;
+        letter-spacing: .1em; text-transform: uppercase; }
+
+    .runs { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap;
+        margin: .1rem 0 .5rem; }
+    .run-chip { border: 1px dashed rgba(244,63,94,.5); background: rgba(244,63,94,.08);
+        color: #FDA4B4; border-radius: 8px; padding: .38rem .7rem;
+        font-family: ui-monospace, monospace; font-size: .8rem; }
+    .joined { border: 1px solid rgba(45,212,191,.45); background: rgba(45,212,191,.09);
+        color: var(--accent-2); border-radius: 8px; padding: .38rem .7rem;
+        font-family: ui-monospace, monospace; font-size: .8rem; display: inline-block; }
+    .fake { border: 1px solid rgba(34,211,238,.45); background: rgba(34,211,238,.09);
+        color: var(--accent); border-radius: 8px; padding: .38rem .7rem;
+        font-family: ui-monospace, monospace; font-size: .8rem; display: inline-block; }
+    .flow-down { color: var(--ink-dim); font-size: .95rem; margin: .12rem 0 .12rem .6rem; }
+
+    .verdict { text-align: center; padding: 1.6rem 1rem; border-radius: 16px;
+        border: 1px solid rgba(34,197,94,.35); background: rgba(34,197,94,.07);
+        margin-bottom: 1rem; }
+    .verdict .mark { font-size: 2.2rem; color: var(--ok); line-height: 1; }
+    .verdict .headline { font-size: 1.15rem; font-weight: 700; color: var(--ink);
+        letter-spacing: .12em; text-transform: uppercase; margin-top: .5rem; }
+
+    .checks { border: 1px solid var(--line); border-radius: 12px;
+        background: var(--card); padding: .3rem 1rem; }
+    .check-row { display: flex; justify-content: space-between; align-items: center;
+        padding: .6rem 0; border-bottom: 1px solid var(--line); font-size: .9rem;
+        color: var(--ink-dim); }
+    .check-row:last-child { border-bottom: none; }
+    .check-pass { color: var(--ok); font-weight: 650; }
+    .check-warn { color: var(--warn); font-weight: 650; }
+
+    .bignum { text-align: center; padding: 1.1rem .5rem; border-radius: 14px;
+        border: 1px solid var(--line); background: var(--card); }
+    .bignum .v { font-size: 2.3rem; font-weight: 700; color: var(--accent);
+        line-height: 1; letter-spacing: -.02em; }
+    .bignum .k { color: var(--ink-dim); font-size: .72rem; letter-spacing: .12em;
+        text-transform: uppercase; margin-top: .45rem; }
+    .bignum .h { color: var(--ink-dim); font-size: .78rem; margin-top: .5rem;
+        line-height: 1.4; }
+
+    .note { border-left: 3px solid var(--accent); background: rgba(34,211,238,.06);
+        border-radius: 6px; padding: .8rem 1rem; color: var(--ink-dim);
+        font-size: .88rem; line-height: 1.55; }
+    .note strong { color: var(--ink); }
+    .note-warn { border-left-color: var(--warn); background: rgba(245,158,11,.07); }
+
+    div[data-testid="stMetric"] { background: var(--card); border: 1px solid var(--line);
+        border-radius: 12px; padding: .85rem 1rem; }
+    div[data-testid="stMetricValue"] { color: var(--accent); }
+    div[data-testid="stTabs"] button { font-weight: 600; }
+    section[data-testid="stFileUploaderDropzone"] {
+        border: 1.5px dashed rgba(34,211,238,.4); background: var(--card);
+        border-radius: 14px; }
 </style>
 """
 
@@ -348,16 +402,70 @@ def redact_upload(*, data: bytes, filename: str, secret: bytes) -> RedactionResu
 def _render_hero() -> None:
     st.markdown(
         """
-        <div class="hero">
-          <div class="section-kicker" style="color:#8fe3dc">Privacy engineering demo</div>
-          <h1>PII Redaction Tool</h1>
-          <p>Hybrid DOCX PII Detection &amp; Deterministic Pseudonymization</p>
-          <div class="capabilities">
-            <span class="capability">9 PII types</span>
-            <span class="capability">Run-aware DOCX</span>
-            <span class="capability">Local NLP</span>
-            <span class="capability">Deterministic replacements</span>
-            <span class="capability">Residual leak scan</span>
+        <div class="kicker">Privacy engineering demo</div>
+        <div class="hero-title">PII Redaction Tool</div>
+        <p class="hero-sub">
+          <strong>Structure-aware DOCX processing</strong> ·
+          <strong>hybrid validated detection</strong> ·
+          <strong>deterministic pseudonymization</strong> ·
+          <strong>post-redaction verification</strong> ·
+          <strong>measured evaluation</strong>
+        </p>
+        <div class="capabilities">
+          <span class="capability">9 PII types</span>
+          <span class="capability">Run-aware DOCX</span>
+          <span class="capability">Local NLP</span>
+          <span class="capability">Deterministic</span>
+          <span class="capability">Leak scan</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _render_stages(*, analyzed: bool, redacted: bool) -> None:
+    """Show Extract → Detect → Replace → Verify as live pipeline status."""
+
+    if redacted:
+        states = ("done", "done", "done", "done")
+    elif analyzed:
+        states = ("done", "done", "active", "pending")
+    else:
+        states = ("active", "pending", "pending", "pending")
+
+    marks = {"done": "✓", "active": "●", "pending": "○"}
+    labels = ("Extract", "Detect", "Replace", "Verify")
+    content = '<div class="stages">'
+    for index, (label, state) in enumerate(zip(labels, states, strict=True)):
+        if index:
+            content += '<span class="stage-arrow">→</span>'
+        css = "" if state == "pending" else f" {state}"
+        content += f'<span class="stage{css}">{marks[state]} &nbsp;{label}</span>'
+    st.markdown(content + "</div>", unsafe_allow_html=True)
+
+
+def _render_run_explainer() -> None:
+    """The core engineering problem, shown rather than described."""
+
+    st.markdown(
+        """
+        <div class="card">
+          <div class="card-tag">Why ordinary regex misses this</div>
+          <h3>Word splits values across formatting runs</h3>
+          <p>Word stores a paragraph as “runs” that break wherever formatting
+          changes — mid-name, mid-phone-number, mid-address. A regex applied
+          per run sees two harmless fragments and matches neither.</p>
+          <div style="margin-top:.9rem">
+            <div class="runs">
+              <span class="run-chip">Run 01 · "Anaya "</span>
+              <span class="run-chip">Run 02 · "Varman"</span>
+            </div>
+            <div class="flow-down">↓ &nbsp;text reconstructed across runs</div>
+            <span class="joined">Anaya Varman</span>
+            <div class="flow-down">↓ &nbsp;detected</div>
+            <span class="joined">PERSON</span>
+            <div class="flow-down">↓ &nbsp;replaced, runs and formatting preserved</div>
+            <span class="fake">Aarav Iyer</span>
           </div>
         </div>
         """,
@@ -365,63 +473,32 @@ def _render_hero() -> None:
     )
 
 
-def _render_pipeline() -> None:
-    steps = (
-        "Upload",
-        "Document structure",
-        "PII detection",
-        "Confidence + method",
-        "Pseudonymization",
-        "DOCX rewrite",
-        "Leak scan",
-        "Download",
-    )
-    content = '<div class="pipeline">'
-    for index, step in enumerate(steps):
-        if index:
-            content += '<span class="pipeline-arrow">→</span>'
-        content += f'<span class="pipeline-step">{step}</span>'
-    st.markdown(content + "</div>", unsafe_allow_html=True)
-
-
 def _render_feature_cards() -> None:
-    columns = st.columns(4)
+    columns = st.columns(3)
     cards = (
         (
-            "🧩",
-            "Run-aware DOCX",
-            "Detects PII even when Word fragments a value across formatting runs.",
-            'Run 1: "Anaya "<br>Run 2: "Varman"<br>↓ &nbsp; Anaya Varman',
-        ),
-        (
-            "🧠",
             "Hybrid detection",
-            "Validators handle structured PII; local spaCy and contextual rules handle semantic PII.",
-            "regex + validation<br>NER + local evidence",
+            "Regex plus validators (Luhn, <code>ipaddress</code>, birth-date "
+            "context) for structured PII. Local spaCy NER plus contextual and "
+            "boundary rules for names, companies, and addresses.",
         ),
         (
-            "🔁",
-            "Deterministic synthesis",
-            "The same normalized source entity always receives the same synthetic value within a run.",
-            "Devika Senvar → Aarav Iyer<br>Devika Senvar → Aarav Iyer",
+            "Deterministic pseudonymization",
+            "HMAC-derived replacements: the same source value always maps to the "
+            "same synthetic value throughout a document, so the text stays "
+            "internally consistent and readable.",
         ),
         (
-            "✅",
             "Post-redaction verification",
-            "Reopens the output, validates DOCX structure, and re-scans supported text for residual PII.",
-            "rewrite → reopen → scan",
+            "The saved file is reopened, its structure and Word run count checked "
+            "against the original, and its text re-scanned for anything that still "
+            "looks like PII.",
         ),
     )
-    for column, (icon, title, body, example) in zip(columns, cards, strict=True):
+    for column, (title, body) in zip(columns, cards, strict=True):
         with column:
             st.markdown(
-                f"""
-                <div class="feature-card">
-                  <div class="feature-icon">{icon}</div>
-                  <h3>{title}</h3><p>{body}</p>
-                  <div class="mini-code">{example}</div>
-                </div>
-                """,
+                f'<div class="card"><h3>{title}</h3><p>{body}</p></div>',
                 unsafe_allow_html=True,
             )
 
@@ -555,38 +632,80 @@ def _render_verification(result: RedactionResult) -> None:
         )
     )
 
-    st.subheader("Redaction and verification")
+    conflicts = int(report.get("conflict_count", 0))
+    integrity_ok = structure_ok and bool(package.get("zip_integrity_valid"))
+    unclassified = int(residual.get("unclassified_residual_count", 0))
+    broad = int(residual.get("broad_overlap_review_count", 0))
+    verified = integrity_ok and conflicts == 0 and unclassified == 0
+
+    st.markdown(
+        f"""
+        <div class="verdict">
+          <div class="mark">{"✓" if verified else "!"}</div>
+          <div class="headline">
+            {"Redaction verified" if verified else "Redaction needs review"}
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     columns = st.columns(5)
     columns[0].metric("Replacements", report.get("applied_replacement_count", 0))
     columns[1].metric("Cross-run", report.get("cross_run_replacement_count", 0))
-    columns[2].metric("Conflicts", report.get("conflict_count", 0))
+    columns[2].metric("Conflicts", conflicts)
     columns[3].metric("Residual review", residual.get("review_required_count", 0))
-    columns[4].metric("Processing time", f"{result.elapsed:.1f}s")
+    columns[4].metric("Elapsed", f"{result.elapsed:.1f}s")
 
-    left, right = st.columns(2)
-    with left:
-        if structure_ok and package.get("zip_integrity_valid"):
-            st.success("DOCX integrity passed after save and reopen.")
-        else:
-            st.error("DOCX integrity or structural verification did not pass.")
-        if report.get("conflict_count", 0) == 0:
-            st.success("No structural replacement conflicts.")
-        else:
-            st.error("Structural conflicts were reported.")
-    with right:
-        unclassified = int(residual.get("unclassified_residual_count", 0))
-        broad = int(residual.get("broad_overlap_review_count", 0))
-        if unclassified == 0 and broad == 0:
-            st.success("Residual scan found no review-required supported text.")
-        else:
-            st.warning(
-                f"Residual scan flagged {unclassified} unclassified and {broad} "
-                "broad-overlap span(s) for contextual review."
-            )
-        st.info(
-            f"{residual.get('known_synthetic_detection_count', 0)} residual "
-            "detections are recognized synthetic replacements, which is expected."
+    def _row(label: str, ok: bool, detail: str) -> str:
+        css = "check-pass" if ok else "check-warn"
+        return (
+            f'<div class="check-row"><span>{label}</span>'
+            f'<span class="{css}">{detail}</span></div>'
         )
+
+    st.markdown("&nbsp;", unsafe_allow_html=True)
+    st.markdown(
+        '<div class="checks">'
+        + _row("DOCX integrity", bool(package.get("zip_integrity_valid")), "PASS")
+        + _row(
+            "Structure preserved", structure_ok, "PASS" if structure_ok else "REVIEW"
+        )
+        + _row(
+            "Output reopened",
+            bool(verification.get("reopened_successfully")),
+            "PASS",
+        )
+        + _row("Residual scan", unclassified == 0, "COMPLETE")
+        + "</div>",
+        unsafe_allow_html=True,
+    )
+
+    known = int(residual.get("known_synthetic_detection_count", 0))
+    if unclassified == 0 and broad:
+        st.markdown(
+            f'<div class="note note-warn">{broad} broad detection(s) reviewed — '
+            "these overlap synthetic replacements the tool just inserted. "
+            "<strong>Zero wholly unclassified high-confidence detections in "
+            "supported text.</strong> Raster-image text is not OCRed, so total "
+            "document coverage is not claimed.</div>",
+            unsafe_allow_html=True,
+        )
+    elif unclassified:
+        st.markdown(
+            f'<div class="note note-warn">{unclassified} unclassified '
+            "high-confidence detection(s) remain in supported text and need "
+            "manual review before this document is shared.</div>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            f'<div class="note">{known} residual detections are recognized '
+            "synthetic replacements, which is expected. No unclassified "
+            "high-confidence PII found in supported text.</div>",
+            unsafe_allow_html=True,
+        )
+    st.markdown("&nbsp;", unsafe_allow_html=True)
 
     st.download_button(
         "Download redacted DOCX",
@@ -634,25 +753,33 @@ def _render_evaluation() -> None:
         return
     exact = result["metrics"]["exact"]
     micro = exact["micro"]
-    st.subheader("Measured model performance")
+    st.markdown('<div class="kicker">Model evaluation</div>', unsafe_allow_html=True)
     st.write(
-        "Primary metrics come from the frozen 180-container set labelled after "
-        "the recognizers were frozen and scored once. The sample is risk-stratified, "
-        "and the report discloses annotator and boundary-convention limitations."
+        "Measured on a frozen 180-container set labelled **after** the recognizers "
+        "were frozen and scored exactly once. These are held-out numbers, not "
+        "tuned ones."
     )
     values = (
-        ("Precision", micro["precision"]),
-        ("Recall", micro["recall"]),
-        ("F1", micro["f1"]),
-        ("Entity-set accuracy", micro["entity_detection_accuracy"]),
+        (
+            "Precision",
+            micro["precision"],
+            "When we redact something, how often were we right?",
+        ),
+        ("Recall", micro["recall"], "Of the PII a human found, how much did we catch?"),
+        ("F1", micro["f1"], "The balance between the two."),
+        (
+            "Accuracy",
+            micro["entity_detection_accuracy"],
+            "TP / (TP + FP + FN) — no inflated true negatives.",
+        ),
     )
-    for column, (label, value) in zip(st.columns(4), values, strict=True):
-        column.metric(label, f"{value * 100:.1f}%")
-
-    st.caption(
-        "Accuracy = TP / (TP + FP + FN). Token accuracy is not used because the "
-        "large non-PII majority would obscure entity and boundary errors."
-    )
+    for column, (label, value, hint) in zip(st.columns(4), values, strict=True):
+        column.markdown(
+            f'<div class="bignum"><div class="v">{value * 100:.1f}%</div>'
+            f'<div class="k">{label}</div><div class="h">{hint}</div></div>',
+            unsafe_allow_html=True,
+        )
+    st.markdown("&nbsp;", unsafe_allow_html=True)
     per_type = exact["by_type"]
     positive_types = (
         PIIType.PERSON,
@@ -794,6 +921,10 @@ def main() -> None:
     st.markdown(APP_CSS, unsafe_allow_html=True)
     _render_hero()
     upload = _render_upload_and_analyze()
+    _render_stages(
+        analyzed=_is_analysis_result(st.session_state.get("analysis")),
+        redacted=_is_redaction_result(st.session_state.get("redaction")),
+    )
     st.divider()
 
     with st.sidebar:
@@ -816,20 +947,33 @@ def main() -> None:
     )
 
     with overview_tab:
-        st.markdown(
-            '<div class="section-kicker">End-to-end workflow</div>',
-            unsafe_allow_html=True,
-        )
-        st.header("More than find-and-replace")
-        _render_pipeline()
+        _render_run_explainer()
+        st.markdown("&nbsp;", unsafe_allow_html=True)
         _render_feature_cards()
         st.markdown("&nbsp;", unsafe_allow_html=True)
         st.markdown(
-            '<div class="privacy-note"><strong>Local NLP:</strong> the recognizer '
-            "runs inside this application process. Reports contain counts, methods, "
-            "confidence, and verification status—not raw detected values.</div>",
+            '<div class="note"><strong>Everything runs locally.</strong> The '
+            "recognizer executes inside this application process — no document "
+            "content reaches an external AI or PII service. Reports contain "
+            "counts, methods, confidence, and verification status, never raw "
+            "detected values.</div>",
             unsafe_allow_html=True,
         )
+        with st.expander("The full pipeline, stage by stage"):
+            st.markdown(
+                "1. **Extract** — every paragraph, table cell, header, footer, and "
+                "text box becomes an addressable container with its Word runs "
+                "mapped, so a value split across runs is reconstructed.\n"
+                "2. **Detect** — structured recognizers (regex + validators) and "
+                "semantic recognizers (local NER + context rules) propose spans; "
+                "conflicts are resolved deterministically so spans never overlap.\n"
+                "3. **Replace** — each accepted span gets an HMAC-derived synthetic "
+                "value; structured replacements are re-checked by the same "
+                "validators used for detection.\n"
+                "4. **Verify** — the rewritten file is saved atomically, reopened, "
+                "checked for structural equivalence, and re-scanned for residual "
+                "PII before it is offered for download."
+            )
 
     with analyze_tab:
         st.subheader("Detection results")
