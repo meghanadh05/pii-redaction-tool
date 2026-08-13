@@ -96,3 +96,20 @@ The complete immutable and append-only machine-readable results are in
 `phase2c_holdout_initial_75ce5f8.json`,
 `phase2d_holdout_post_fix_99f9fb5.json`, and
 `phase2e_person_precision_diagnostic_ecbcbf6.json` in this directory.
+
+## The blind evaluation this report does not contain
+
+Because every dataset above has now informed a repair, none of them can produce
+an unbiased final number. The instrument for one already exists and is frozen:
+`evaluation/ground_truth/final_candidate_pool/` holds 180 containers selected by
+a recorded algorithm, disjoint from all 53 development and 120 Phase 2C
+containers, with `annotation_status: not_started` and `evaluation_status:
+not_run`. Its manifest pins the source, extractor, and recognizer commit hashes.
+
+Exhaustively annotating that pool and scoring it exactly once would give the
+first genuinely blind measurement of this implementation. It has deliberately
+not been run, because a blind evaluation is only blind the first time and the
+recognizers were still being repaired. The expected outcome is a micro precision
+somewhere between the untouched Phase 2C result (0.543) and the current
+non-blind diagnostic (0.843); anyone reading these numbers should anchor on that
+range rather than on 0.843 alone.
