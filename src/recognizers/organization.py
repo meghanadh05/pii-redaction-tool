@@ -1,4 +1,4 @@
-"""COMPANY recognition using legal forms, local NER, and exclusions."""
+"""COMPANY recognition with precise legal forms and candidate-local context."""
 
 from __future__ import annotations
 
@@ -9,29 +9,46 @@ from src.models import PIIEntity, PIIType
 from src.recognizers.base import Recognizer
 
 
+_LEGAL_SUFFIX = (
+    r"Private[ \t]+Limited|Public[ \t]+Limited|Limited|Ltd\.?|LLP|L\.L\.P\.|"
+    r"Inc\.?|Incorporated|Corp\.?|Corporation|PLC|P\.L\.C\."
+)
 _LEGAL_COMPANY = re.compile(
     r"(?<![\w])(?P<company>"
-    r"[A-Z][A-Za-z0-9&.'’()-]*"
-    r"(?:[ \t]+(?:[A-Z][A-Za-z0-9&.'’()-]*|&|and|of|the)){0,10}"
-    r"[ \t]+(?i:Private[ \t]+Limited|Public[ \t]+Limited|Limited|Ltd\.?|LLP|L\.L\.P\.))"
+    rf"(?!(?i:{_LEGAL_SUFFIX})\b)[A-Z][A-Za-z0-9&.'’()-]*"
+    r"(?:[ \t]+(?:[A-Z][A-Za-z0-9&.'’()-]*|&|and|of|the)){0,10}?"
+    rf"[ \t]+(?i:{_LEGAL_SUFFIX}))"
     r"(?![\w])"
 )
-_COMPANY_CONTEXT = re.compile(
-    r"(?i)\b(?:company|issuer|corporate\s+promoter|registrar|book\s+running"
-    r"\s+lead\s+manager|auditors?|industry\s+data\s+provider)\b"
+_ROLE_PREFIX = re.compile(
+    r"(?i)^(?:(?:name(?:\s+and\s+logo)?\s+of\s+the\s+)?"
+    r"(?:book\s+running\s+lead\s+manager|registrar(?:\s+to\s+the\s+offer)?|"
+    r"escrow\s+collection\s+bank|bankers?\s+to\s+the\s+offer|"
+    r"monitoring\s+agency|statutory\s+auditors?|share\s+escrow\s+agent)"
+    r"\s*[:,-]?\s+)+"
+)
+_LOCAL_COMPANY_LABEL = re.compile(
+    r"(?i)(?:\b(?:company|issuer|corporate\s+promoter|registrar|"
+    r"book\s+running\s+lead\s+manager|statutory\s+auditor|auditor|"
+    r"industry\s+data\s+provider|share\s+escrow\s+agent|monitoring\s+agency|"
+    r"bank|professional\s+firm)\b[^.;:]{0,45}?"
+    r"(?:being|namely|is|:|-)\s*)$"
 )
 _COMMERCIAL_HINT = re.compile(
-    r"(?i)\b(?:advisory|analytics|bank|industr(?:y|ies)|infra|logistics|motors|"
-    r"securities|services|wealth)\b"
+    r"(?i)\b(?:advisory|analytics|associates|bank|industr(?:y|ies)|infra|"
+    r"logistics|motors|ratings|securities|services|technologies|ventures|wealth)\b"
 )
-_NON_COMPANY = re.compile(
-    r"(?i)^(?:SEBI|India|Company|Registrar|Offer|Government of India|"
-    r"Board of Directors|Audit Committee|IPO Committee|Risk Factors|"
-    r"Stock Exchanges?)$"
+_EXCLUDED_ORGANIZATION = re.compile(
+    r"(?i)(?:\b(?:act|agreement|bidders?|board|circulars?|committee|"
+    r"department|document|government|investors?|managers?|ministry|offer|"
+    r"policy|prospectus|regulations?|report|rules?|shareholders?|statements?|"
+    r"stock\s+exchanges?|syndicate\s+members?)\b|\bfamily\s+trust\b)"
 )
-_PERSON_ROLE_PREFIX = re.compile(
-    r"(?i)(?:\bbeing\s+|\bnamely,?\s+|contact\s+person\s*:\s*)[^.;:]{0,12}$"
+_REGULATORY_BODY = re.compile(
+    r"(?i)^(?:SEBI|Reserve Bank of India|Securities and Exchange Board of India|"
+    r"Government of India|Ministry\b|Department\b)"
 )
+_PERSON_LIKE = re.compile(r"^[A-Z][A-Za-z.'’-]*(?:[ \t]+[A-Z][A-Za-z.'’-]*){1,4}$")
 
 
 def _overlaps(start: int, end: int, spans: list[tuple[int, int]]) -> bool:
@@ -40,24 +57,50 @@ def _overlaps(start: int, end: int, spans: list[tuple[int, int]]) -> bool:
     )
 
 
+def _trim_legal_boundary(text: str, start: int, end: int) -> tuple[int, int]:
+    value = text[start:end]
+    formerly = re.match(r"(?i)Formerly[ \t]+", value)
+    if formerly:
+        start += formerly.end()
+        value = text[start:end]
+    role_prefix = _ROLE_PREFIX.match(value)
+    if role_prefix:
+        start += role_prefix.end()
+    return start, end
+
+
 class OrganizationRecognizer(Recognizer):
-    name = "company_ner_context"
+    name = "company_ner_local_context"
     supported_types = frozenset({PIIType.COMPANY})
 
     def __init__(self, provider: NERProvider, *, minimum_confidence: float = 0.84):
         self._provider = provider
         self._minimum_confidence = minimum_confidence
 
+    @staticmethod
+    def _is_excluded(value: str, *, legal_suffix: bool = False) -> bool:
+        if legal_suffix:
+            return bool(
+                _REGULATORY_BODY.search(value) or re.search(r"(?i)\btrust\b", value)
+            )
+        return bool(
+            _REGULATORY_BODY.search(value)
+            or _EXCLUDED_ORGANIZATION.search(value)
+            or (
+                _PERSON_LIKE.fullmatch(value)
+                and not _COMMERCIAL_HINT.search(value)
+                and "&" not in value
+            )
+        )
+
     def detect(self, text: str) -> list[PIIEntity]:
         entities: list[PIIEntity] = []
         accepted_spans: list[tuple[int, int]] = []
         for match in _LEGAL_COMPANY.finditer(text):
-            start, end = match.span("company")
-            value = match.group("company")
-            formerly = re.match(r"(?i)Formerly[ \t]+", value)
-            if formerly:
-                start += formerly.end()
-                value = text[start:end]
+            start, end = _trim_legal_boundary(text, *match.span("company"))
+            value = text[start:end]
+            if not value or self._is_excluded(value, legal_suffix=True):
+                continue
             entities.append(
                 PIIEntity(
                     entity_type=PIIType.COMPANY,
@@ -68,38 +111,45 @@ class OrganizationRecognizer(Recognizer):
                     recognizer=self.name,
                     metadata={
                         "strong_context": True,
-                        "signals": ("LEGAL_COMPANY_SUFFIX",),
+                        "signals": ("LEGAL_COMPANY_SUFFIX", "PRECISE_SUFFIX_BOUNDARY"),
                     },
                 )
             )
             accepted_spans.append((start, end))
 
-        has_company_context = bool(_COMPANY_CONTEXT.search(text))
         for ner_span in self._provider.entities(text):
             if ner_span.label != "ORG" or _overlaps(
                 ner_span.start, ner_span.end, accepted_spans
             ):
                 continue
-            start, end = ner_span.start, ner_span.end
-            value = text[start:end].strip(" \t,;:.()")
-            start += len(text[start:end]) - len(text[start:end].lstrip(" \t,;:.()"))
+            raw_value = text[ner_span.start : ner_span.end]
+            value = raw_value.strip(" \t,;:.()")
+            start = ner_span.start + len(raw_value) - len(raw_value.lstrip(" \t,;:.()"))
             end = start + len(value)
-            if not value or _NON_COMPANY.fullmatch(value):
+            if not value or self._is_excluded(value):
                 continue
-            if _PERSON_ROLE_PREFIX.search(text[max(0, start - 35) : start]):
-                continue
-            looks_like_heading = value == text.strip() and (
+
+            prefix = text[max(0, start - 100) : start]
+            local_label = bool(_LOCAL_COMPANY_LABEL.search(prefix))
+            commercial_structure = bool(
+                _COMMERCIAL_HINT.search(value)
+                and ("&" in value or len(value.split()) >= 3)
+            )
+            whole_container_heading = value == text.strip() and (
                 value.isupper() or len(value.split()) <= 5
             )
-            commercial_hint = bool(_COMMERCIAL_HINT.search(value))
-            if (
-                looks_like_heading
-                or (len(value.split()) < 2 and not commercial_hint)
-                or not (has_company_context or commercial_hint)
-            ):
+            if whole_container_heading or not (local_label or commercial_structure):
                 continue
-            confidence = 0.76 + (0.08 if has_company_context else 0.0)
-            confidence += 0.08 if commercial_hint else 0.0
+
+            signals = ["NER_ORG"]
+            confidence = 0.76
+            if local_label:
+                signals.append("LOCAL_COMPANY_LABEL")
+                confidence += 0.12
+            if commercial_structure:
+                signals.append("NAMED_COMMERCIAL_STRUCTURE")
+                confidence += 0.08
+            confidence = min(confidence, 0.94)
             if confidence < self._minimum_confidence:
                 continue
             entities.append(
@@ -108,19 +158,11 @@ class OrganizationRecognizer(Recognizer):
                     text=value,
                     start=start,
                     end=end,
-                    confidence=min(confidence, 0.92),
+                    confidence=confidence,
                     recognizer=self.name,
                     metadata={
-                        "strong_context": has_company_context,
-                        "signals": tuple(
-                            signal
-                            for signal, present in (
-                                ("NER_ORG", True),
-                                ("COMPANY_CONTEXT", has_company_context),
-                                ("COMMERCIAL_LEXICON", commercial_hint),
-                            )
-                            if present
-                        ),
+                        "strong_context": local_label,
+                        "signals": tuple(signals),
                     },
                 )
             )

@@ -1,4 +1,4 @@
-"""Postal ADDRESS recognition with NER as supporting, never sole, evidence."""
+"""Flexible structural ADDRESS recognition with bounded local NER support."""
 
 from __future__ import annotations
 
@@ -10,49 +10,104 @@ from src.recognizers.base import Recognizer
 
 
 _ADDRESS_PREFIX = re.compile(
-    r"(?i)(?:\b(?:registered|corporate|head|branch|mailing)\s+office"
-    r"(?:\s+address)?\s*:\s*|\baddress\s*:\s*|\blocated\s+at\s*)"
+    r"(?i)(?:\b(?:registered|corporate|head|branch|mailing|operations?)\s+office"
+    r"(?:\s+address)?\s*(?::|at)?\s*|\baddress\s*:\s*|"
+    r"\b(?:facility|office)\s+(?:is\s+)?located\s+at\s*|\blocated\s+at\s*)"
 )
-_INDIAN_POSTAL_CODE = re.compile(r"(?<!\d)[1-9]\d{2}[ \t]?\d{3}(?!\d)")
+_INDIAN_POSTAL_CODE = re.compile(
+    r"(?<![\w])(?P<pin>[1-9]\d[0-9Il][ \t-]?[0-9Il]\d{2})(?![\w])"
+)
 _ADDRESS_FEATURE = re.compile(
-    r"(?i)\b(?:building|centre|complex|embassy|farms?|floor|industrial|marg|"
-    r"nagar|office|park|plot|road|street|taluka|tower|village|wing)\b"
+    r"(?i)\b(?:apartment|avenue|building|bungalow|bunglow|campus|centre|"
+    r"chambers?|complex|department|estate|farms?|flat|floor|gymkhana|"
+    r"highway|hospital|industrial|lane|level|marg|nagar|office|park|plot|"
+    r"road|society|station|street|taluka|tower|unit|village|wing)\b"
+)
+_PREMISE = re.compile(
+    r"(?i)(?:\b(?:flat|floor|plot|room|s\.?\s*no\.?|suite|tower|unit|wing)"
+    r"\s*(?:no\.?\s*)?[A-Z0-9]|\b[A-Z]?-?\d{1,4}(?:[/ -]\d{1,4})?\b)"
 )
 _REGION_FEATURE = re.compile(
     r"(?i)\b(?:India|Maharashtra|Mumbai|Pune|Delhi|Kolkata|Chennai|Bengaluru|"
-    r"Hyderabad|Ahmedabad)\b"
+    r"Hyderabad|Ahmedabad|Nashik|Bhopal|Raigad|Gujarat|Karnataka|Tamil Nadu)\b"
+)
+_CONTACT_BOUNDARY = re.compile(
+    r"(?i)(?:\s*[;|]?\s*\b(?:tel(?:ephone)?|phone|mobile|fax|e-?mail|"
+    r"website|contact\s+person)\b\s*:?)"
+)
+_LEADING_LEGAL_COMPANY = re.compile(
+    r"(?i)^.+?\b(?:Private\s+Limited|Public\s+Limited|Limited|Ltd\.?|LLP|"
+    r"L\.L\.P\.|Inc\.?|Corporation)\b[\s,;:-]*"
 )
 
 
+def _trim(text: str, start: int, end: int) -> tuple[int, int]:
+    while start < end and text[start] in " \t,;:-":
+        start += 1
+    while end > start and text[end - 1] in " \t,;:.":
+        end -= 1
+    return start, end
+
+
 class AddressRecognizer(Recognizer):
-    name = "address_postal_ner_context"
+    name = "address_structural_local_context"
     supported_types = frozenset({PIIType.ADDRESS})
 
-    def __init__(self, provider: NERProvider, *, minimum_confidence: float = 0.88):
+    def __init__(self, provider: NERProvider, *, minimum_confidence: float = 0.86):
         self._provider = provider
         self._minimum_confidence = minimum_confidence
 
-    def detect(self, text: str) -> list[PIIEntity]:
-        postal_matches = tuple(_INDIAN_POSTAL_CODE.finditer(text))
-        if not postal_matches:
-            return []
-
+    def _candidate_bounds(self, text: str) -> tuple[int, int, bool]:
         prefixes = tuple(_ADDRESS_PREFIX.finditer(text))
+        explicit_prefix = bool(prefixes)
         start = prefixes[-1].end() if prefixes else len(text) - len(text.lstrip())
         end = len(text.rstrip())
-        while end > start and text[end - 1] in ";.":
-            end -= 1
-        value = text[start:end]
-        if not value or not any(
-            start <= match.start() < end for match in postal_matches
-        ):
-            return []
+        boundary = _CONTACT_BOUNDARY.search(text, start)
+        if boundary:
+            end = boundary.start()
 
-        comma_count = value.count(",")
-        has_premise_number = bool(re.search(r"\d", value))
-        has_address_feature = bool(_ADDRESS_FEATURE.search(value))
+        if not explicit_prefix:
+            leading = text[start:end]
+            legal_company = _LEADING_LEGAL_COMPANY.match(leading)
+            if legal_company:
+                start += legal_company.end()
+            else:
+                feature = _ADDRESS_FEATURE.search(text, start, end)
+                for span in self._provider.entities(text):
+                    if (
+                        span.label == "ORG"
+                        and span.start <= start + 2
+                        and feature is not None
+                        and span.end <= feature.start()
+                    ):
+                        start = span.end
+                        break
+        start, end = _trim(text, start, end)
+        return start, end, explicit_prefix
+
+    def detect(self, text: str) -> list[PIIEntity]:
+        start, end, explicit_prefix = self._candidate_bounds(text)
+        if start >= end:
+            return []
+        value = text[start:end]
+        postal_matches = tuple(_INDIAN_POSTAL_CODE.finditer(value))
+        features = tuple(_ADDRESS_FEATURE.finditer(value))
+        premise = bool(_PREMISE.search(value))
         has_region = bool(_REGION_FEATURE.search(value))
-        if comma_count < 2 or not has_premise_number or not has_address_feature:
+        comma_count = value.count(",")
+
+        # A postcode is strong but still requires actual address structure.
+        # Without one, require an explicit address label and multiple structural
+        # components, or exceptionally dense standalone address structure.
+        if postal_matches:
+            structural = bool(features) and (premise or has_region or comma_count >= 1)
+        else:
+            structural = (
+                len(features) >= 2
+                and premise
+                and (explicit_prefix or comma_count >= 1 or len(features) >= 3)
+            )
+        if not structural:
             return []
 
         supporting_ner = sorted(
@@ -64,17 +119,23 @@ class AddressRecognizer(Recognizer):
                 and span.start < end
             }
         )
-        signals = ["INDIAN_POSTAL_CODE", "ADDRESS_STRUCTURE"]
-        confidence = 0.88
-        if prefixes:
-            signals.append("ADDRESS_LABEL_OR_LOCATED_AT")
-            confidence += 0.06
+        signals = ["ADDRESS_STRUCTURE"]
+        confidence = 0.86
+        if postal_matches:
+            signals.append("POSTAL_CODE_OR_OCR_VARIANT")
+            confidence += 0.05
+        if explicit_prefix:
+            signals.append("LOCAL_ADDRESS_LABEL")
+            confidence += 0.05
+        if premise:
+            signals.append("PREMISE_COMPONENT")
+            confidence += 0.02
         if has_region:
             signals.append("REGION_COMPONENT")
-            confidence += 0.03
+            confidence += 0.01
         if supporting_ner:
             signals.append("NER_LOCATION_SUPPORT")
-            confidence += 0.02
+            confidence += 0.01
         confidence = min(confidence, 0.99)
         if confidence < self._minimum_confidence:
             return []
@@ -87,7 +148,7 @@ class AddressRecognizer(Recognizer):
                 confidence=confidence,
                 recognizer=self.name,
                 metadata={
-                    "strong_context": True,
+                    "strong_context": explicit_prefix or bool(postal_matches),
                     "signals": tuple(signals),
                     "supporting_ner_labels": tuple(supporting_ner),
                 },

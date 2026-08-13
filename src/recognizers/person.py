@@ -1,4 +1,4 @@
-"""Precision-focused PERSON recognition using local NER and context."""
+"""PERSON recognition using local roles, list parsing, and guarded NER."""
 
 from __future__ import annotations
 
@@ -10,57 +10,91 @@ from src.recognizers.base import Recognizer
 
 
 _PERSON_FORM = re.compile(r"^[A-Z][A-Za-z.'’-]*(?:[ \t]+[A-Z][A-Za-z.'’-]*){1,4}$")
-_PERSON_CONTEXT = re.compile(
-    r"(?i)\b(?:contact\s+person|chairman|director|chief\s+(?:executive|financial)"
-    r"\s+officer|company\s+secretary|compliance\s+officer|engineer)\b"
-    r"|\b(?:being|namely)\s*$"
+_ROLE_INTRO = re.compile(
+    r"(?i)\b(?:contact\s+persons?|promoters?|directors?|chairman|"
+    r"chief\s+(?:executive|financial)\s+officer|CEO|CFO|"
+    r"company\s+secretary(?:\s+and\s+compliance\s+officer)?|"
+    r"compliance\s+officer|managing\s+director|whole-time\s+director|"
+    r"joint\s+managing\s+director|engineer)\b"
+    r"(?:\s+of\s+our\s+company)?(?:\s*,?\s*(?:are|being|namely))?\s*[:,]?\s*"
 )
-_STRONG_PREFIX = re.compile(
-    r"(?i)(?:contact\s+person\s*:\s*|\bbeing\s+|\bnamely,?\s+)[^.;:]{0,12}$"
+_DIRECT_ROLE_PREFIX = re.compile(
+    r"(?i)(?:contact\s+persons?\s*:\s*|\b(?:being|namely),?\s+|"
+    r"\b(?:CEO|CFO)\s*:\s*)[^.;:]{0,28}$"
 )
+_REGION_STOP = re.compile(
+    r"(?i)(?:[.;]|,\s*(?:company\s+secretary|compliance\s+officer|director|"
+    r"chairman|CEO|CFO)\b|\b(?:telephone|phone|mobile|e-?mail|website|for\s+further|"
+    r"are\s+the\s+promoters?|is\s+the\s+promoter)\b)"
+)
+_LIST_SEPARATOR = re.compile(r"\s*(?:/|,|\band\b)\s*", re.IGNORECASE)
 _GENERIC_WORDS = frozenset(
     {
+        "address",
+        "apartment",
         "association",
         "audit",
+        "bank",
         "board",
         "branch",
+        "building",
+        "business",
+        "campus",
+        "centre",
         "committee",
         "company",
+        "complex",
+        "department",
         "directors",
         "factors",
+        "floor",
         "government",
+        "hospital",
         "india",
         "international",
         "limited",
         "management",
-        "offer",
         "office",
+        "offer",
         "parents",
         "registrar",
         "risk",
+        "road",
         "securities",
+        "station",
+        "tower",
+        "trust",
     }
 )
 
 
-def _trimmed_parts(text: str, start: int, end: int) -> tuple[tuple[int, int], ...]:
-    """Split a NER span containing slash-separated contact names."""
+def _clean_span(text: str, start: int, end: int) -> tuple[int, int]:
+    while start < end and text[start] in " \t,;:/()":
+        start += 1
+    while end > start and text[end - 1] in " \t,;:/*()":
+        end -= 1
+    honorific = re.match(r"(?i)(?:Mr|Mrs|Ms|Dr)\.?\s+", text[start:end])
+    if honorific:
+        start += honorific.end()
+    return start, end
 
+
+def _split_parts(text: str, start: int, end: int) -> tuple[tuple[int, int], ...]:
     parts: list[tuple[int, int]] = []
     cursor = start
-    for raw_part in text[start:end].split("/"):
-        left = len(raw_part) - len(raw_part.lstrip())
-        right = len(raw_part.rstrip())
-        part_start = cursor + left
-        part_end = cursor + right
+    for match in _LIST_SEPARATOR.finditer(text, start, end):
+        part_start, part_end = _clean_span(text, cursor, match.start())
         if part_start < part_end:
             parts.append((part_start, part_end))
-        cursor += len(raw_part) + 1
+        cursor = match.end()
+    part_start, part_end = _clean_span(text, cursor, end)
+    if part_start < part_end:
+        parts.append((part_start, part_end))
     return tuple(parts)
 
 
 class PersonRecognizer(Recognizer):
-    name = "person_ner_context"
+    name = "person_ner_local_context"
     supported_types = frozenset({PIIType.PERSON})
 
     def __init__(self, provider: NERProvider, *, minimum_confidence: float = 0.82):
@@ -74,48 +108,96 @@ class PersonRecognizer(Recognizer):
             _GENERIC_WORDS
         )
 
+    @staticmethod
+    def _role_regions(text: str) -> tuple[tuple[int, int], ...]:
+        regions: list[tuple[int, int]] = []
+        for match in _ROLE_INTRO.finditer(text):
+            start = match.end()
+            remainder = text[start : min(len(text), start + 300)]
+            stop = _REGION_STOP.search(remainder)
+            end = start + (stop.start() if stop else len(remainder))
+            if start < end:
+                regions.append((start, end))
+        return tuple(regions)
+
+    def _entity(
+        self,
+        text: str,
+        start: int,
+        end: int,
+        *,
+        confidence: float,
+        signals: tuple[str, ...],
+        ner_label: str | None = None,
+    ) -> PIIEntity | None:
+        start, end = _clean_span(text, start, end)
+        value = text[start:end]
+        if not self._looks_like_person(value) or confidence < self._minimum_confidence:
+            return None
+        metadata: dict[str, object] = {
+            "strong_context": "LOCAL_PERSON_ROLE" in signals
+            or "PERSON_LIST_CONTEXT" in signals,
+            "signals": signals,
+        }
+        if ner_label is not None:
+            metadata["ner_label"] = ner_label
+        return PIIEntity(
+            entity_type=PIIType.PERSON,
+            text=value,
+            start=start,
+            end=end,
+            confidence=min(confidence, 0.98),
+            recognizer=self.name,
+            metadata=metadata,  # type: ignore[arg-type]
+        )
+
     def detect(self, text: str) -> list[PIIEntity]:
-        entities: list[PIIEntity] = []
-        global_person_context = bool(_PERSON_CONTEXT.search(text))
+        entities: dict[tuple[int, int], PIIEntity] = {}
+        role_regions = self._role_regions(text)
+        for start, end in role_regions:
+            for part_start, part_end in _split_parts(text, start, end):
+                entity = self._entity(
+                    text,
+                    part_start,
+                    part_end,
+                    confidence=0.96,
+                    signals=("PERSON_LIST_CONTEXT", "LOCAL_PERSON_ROLE"),
+                )
+                if entity is not None:
+                    entities[(entity.start, entity.end)] = entity
+
         for ner_span in self._provider.entities(text):
             if ner_span.label not in {"PERSON", "ORG"}:
                 continue
-            slash_list = "/" in text[ner_span.start : ner_span.end]
-            if ner_span.label == "ORG" and not (global_person_context or slash_list):
-                continue
-            for start, end in _trimmed_parts(text, ner_span.start, ner_span.end):
-                value = text[start:end]
-                if not self._looks_like_person(value):
-                    continue
-                prefix = text[max(0, start - 40) : start]
-                strong_prefix = bool(_STRONG_PREFIX.search(prefix))
-                signals = ["NER_PERSON" if ner_span.label == "PERSON" else "NER_ORG"]
-                confidence = 0.82 if ner_span.label == "PERSON" else 0.72
-                if slash_list:
-                    signals.append("SLASH_SEPARATED_CONTACT_NAMES")
-                    confidence += 0.14
-                if global_person_context:
-                    signals.append("PERSON_ROLE_CONTEXT")
-                    confidence += 0.08
-                if strong_prefix:
-                    signals.append("DIRECT_PERSON_PREFIX")
-                    confidence += 0.08
-                confidence = min(confidence, 0.98)
-                if confidence < self._minimum_confidence:
-                    continue
-                entities.append(
-                    PIIEntity(
-                        entity_type=PIIType.PERSON,
-                        text=value,
-                        start=start,
-                        end=end,
-                        confidence=confidence,
-                        recognizer=self.name,
-                        metadata={
-                            "strong_context": strong_prefix or slash_list,
-                            "signals": tuple(signals),
-                            "ner_label": ner_span.label,
-                        },
-                    )
+            span_value = text[ner_span.start : ner_span.end]
+            list_like = bool(_LIST_SEPARATOR.search(span_value))
+            locally_qualified = any(
+                region_start <= ner_span.start < region_end
+                for region_start, region_end in role_regions
+            ) or bool(
+                _DIRECT_ROLE_PREFIX.search(
+                    text[max(0, ner_span.start - 70) : ner_span.start]
                 )
-        return entities
+            )
+            if ner_span.label == "ORG" and not (locally_qualified or list_like):
+                continue
+            for start, end in _split_parts(text, ner_span.start, ner_span.end):
+                signals = ["NER_PERSON" if ner_span.label == "PERSON" else "NER_ORG"]
+                confidence = 0.84 if ner_span.label == "PERSON" else 0.72
+                if list_like:
+                    signals.append("SEPARATED_PERSON_LIST")
+                    confidence += 0.12
+                if locally_qualified:
+                    signals.append("LOCAL_PERSON_ROLE")
+                    confidence += 0.14
+                entity = self._entity(
+                    text,
+                    start,
+                    end,
+                    confidence=confidence,
+                    signals=tuple(signals),
+                    ner_label=ner_span.label,
+                )
+                if entity is not None:
+                    entities[(entity.start, entity.end)] = entity
+        return sorted(entities.values(), key=lambda item: (item.start, item.end))
