@@ -22,6 +22,18 @@ tokenization and would be dominated by the very large number of non-PII tokens.
 It could appear excellent even while missing important entities and would hide
 the exact-boundary errors that matter when mutating a DOCX.
 
+## What counts as PII for scoring
+
+Ticket numbers, order numbers, invoice and page numbers, corporate registration
+identifiers (CIN, DIN, SEBI, ISIN), financial figures, and ordinary dates are
+deliberately **not** treated as PII. They identify a transaction or document
+rather than a person. Annotations therefore contain no such spans, and a
+detector that redacted them would be scored as producing false positives.
+
+Company names *are* treated as PII because the assignment lists them as a
+required category. Dates are redacted only with explicit birth context, so an
+ordinary date in the prospectus is a true negative, not a missed DOB.
+
 ## Current model: Phase 2E post-fix diagnostic
 
 | Category | TP | FP | FN | Precision | Recall | F1 | Entity-set accuracy |
