@@ -126,13 +126,37 @@ DrawingML/VML text boxes are supported. The write path fails before output on
 overlaps or unsupported run XML, saves atomically, reopens the result, validates
 ZIP/XML integrity, and performs a residual high-confidence scan.
 
-Semantic detection remains imperfect: PERSON is the largest false-positive
-risk, exact ADDRESS boundaries can differ, and real prospectus recall could not
-be measured for SSN, CREDIT_CARD, DOB, or IP_ADDRESS because the labelled subset
-contained no positives. The semantic rules are intentionally biased toward
-English-language, Indian corporate documents, so other locales may have lower
-recall. Raster-image text is not OCRed; shape metadata is audited but not
-rewritten. See the concise
-[`evaluation report`](docs/evaluation_report.md),
-[`redaction run report`](docs/redaction_run_report.json), and
-[`engineering overview`](docs/engineering_overview.md) for details.
+## Measured quality
+
+On a blind set of 180 containers — labelled after the recognizers were frozen
+and scored exactly once — micro precision is **0.675**, recall **0.839**, and
+F1 **0.748**.
+
+| Category | Precision | Recall |
+| --- | ---: | ---: |
+| EMAIL | 1.000 | 1.000 |
+| PHONE | 1.000 | 1.000 |
+| COMPANY | 0.809 | 0.854 |
+| ADDRESS (exact / relaxed) | 0.571 / 0.786 | 0.640 / 0.880 |
+| PERSON | 0.191 | 0.643 |
+
+**PERSON precision is poor and this is the honest number.** In a prospectus,
+defined terms are Title-Cased exactly like names, so "Selling Shareholders",
+"Key Managerial Personnel", and "Equity Shares" are over-redacted. The failure
+direction is safe — no false positive was a real person, and nothing leaks —
+but the output is noisier than it should be. An earlier, repeatedly-reused
+evaluation set reported PERSON precision as 0.674; the blind set shows 0.191,
+and that gap is itself reported rather than hidden.
+
+Exact ADDRESS boundaries often differ from a human's by a premise number, which
+is why the relaxed score is much higher. SSN, CREDIT_CARD, DOB, and IP_ADDRESS
+have no positives anywhere in this prospectus, so their real-document recall is
+unmeasured and covered only by unit tests. The semantic rules are tuned for
+English-language Indian corporate documents; other locales will do worse.
+Raster-image text is not OCRed, and shape metadata is audited but not rewritten.
+
+Full methodology, error analysis, and the reasoning for not fixing PERSON after
+seeing these results are in the
+[`evaluation report`](docs/evaluation_report.md). See also the
+[`redaction run report`](docs/redaction_run_report.json) and
+[`engineering overview`](docs/engineering_overview.md).

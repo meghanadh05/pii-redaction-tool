@@ -88,7 +88,7 @@ def test_phase2c_initial_result_remains_byte_for_byte_frozen() -> None:
     )
 
 
-def test_final_candidate_pool_is_frozen_unlabelled_and_disjoint() -> None:
+def test_final_candidate_pool_is_frozen_annotated_and_disjoint() -> None:
     development = load_ground_truth(
         PROJECT_ROOT / "evaluation" / "ground_truth" / "development",
         source_path=SOURCE_PATH,
@@ -107,13 +107,14 @@ def test_final_candidate_pool_is_frozen_unlabelled_and_disjoint() -> None:
     assert manifest["document_sha256"] == sha256(SOURCE_PATH.read_bytes()).hexdigest()
     assert manifest["extraction_version"] == EXTRACTOR_SCHEMA_VERSION == "1.0"
     assert manifest["recognizer_snapshot_commit"] == "99f9fb5"
-    assert manifest["annotation_status"] == "not_started"
-    assert manifest["evaluation_status"] == "not_run"
-    assert manifest["labels_inspected"] is False
+    # The pool was selected and frozen while unlabelled, then annotated once
+    # against fixed written conventions and scored exactly once.
+    assert manifest["annotation_status"] == "complete"
+    assert manifest["labels_inspected"] is True
     assert manifest["pool_container_count"] == len(selected_ids) == 180
     assert len(selected_ids) == len(set(selected_ids))
-    assert all(item["review_complete"] is False for item in selected)
-    assert not (pool_directory / "annotations.jsonl").exists()
+    assert all(item["review_complete"] is True for item in selected)
+    assert (pool_directory / "annotation_conventions.md").is_file()
     assert set(selected_ids).isdisjoint(development.container_ids)
     assert set(selected_ids).isdisjoint(phase2c_holdout.container_ids)
     assert set(selected_ids) <= {
@@ -136,3 +137,27 @@ def test_final_candidate_pool_is_frozen_unlabelled_and_disjoint() -> None:
     assert manifest["pool_manifest_sha256"] == (
         "ceefe99f45589f911c8b634f85ed9f21a99ae48337013398554e55fa2c6307b9"
     )
+
+
+def test_blind_pool_annotations_are_valid_and_confined_to_the_pool() -> None:
+    pool_directory = (
+        PROJECT_ROOT / "evaluation" / "ground_truth" / "final_candidate_pool"
+    )
+    dataset = load_ground_truth(pool_directory, source_path=SOURCE_PATH)
+    containers = {
+        item.id: item.text
+        for item in extract_text_containers(SOURCE_PATH)
+        if item.id in dataset.container_ids
+    }
+
+    assert len(dataset.annotations) == 168
+    assert {item.container_id for item in dataset.annotations} <= dataset.container_ids
+
+    seen: dict[str, list[tuple[int, int]]] = {}
+    for annotation in dataset.annotations:
+        text = containers[annotation.container_id]
+        assert 0 <= annotation.start < annotation.end <= len(text)
+        assert text[annotation.start : annotation.end].strip()
+        for previous in seen.setdefault(annotation.container_id, []):
+            assert annotation.start >= previous[1] or annotation.end <= previous[0]
+        seen[annotation.container_id].append((annotation.start, annotation.end))
