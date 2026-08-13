@@ -79,6 +79,44 @@ repeated normalized values remain consistent. Generated structured values pass
 their production validators. Conservative local PERSON–EMAIL linking is kept
 separate from detection so weak relationships are not forced.
 
+## What is deliberately not redacted
+
+Ticket and order numbers are **not** treated as PII, and neither are other
+non-personal business identifiers. They identify a transaction or a document,
+not a person, and redacting them would destroy the reader's ability to check
+that the rest of the document survived intact. Concretely, these are left
+untouched:
+
+| Kept | Example |
+| --- | --- |
+| Ticket / order numbers | `TKT-2026-004281`, `ORD-771240` |
+| Corporate registration IDs | CIN, DIN, SEBI registration, ISIN |
+| Ordinary dates | `December 10, 2025` (only dates with birth context are redacted) |
+| Financial figures and counts | offer prices, share counts, bid lots |
+| Page and invoice numbers | `Page 145 of 372` |
+
+Company names *are* redacted, because the assignment lists them as a required
+category. A bare digit sequence is never redacted on shape alone: phone and
+credit card candidates must clear length, context, and Luhn checks, so account
+and reference numbers do not become false positives.
+
+## Adding a new PII type
+
+The recognizers are independent and registered in one place, so a new category
+is four small steps:
+
+1. Add the member to `PIIType` in [`src/models.py`](src/models.py).
+2. Add a `Recognizer` subclass in [`src/recognizers/`](src/recognizers/)
+   implementing `detect(text) -> list[PIIEntity]`, with `name` and
+   `supported_types` class attributes.
+3. Register it in `structured_recognizers()` or `semantic_recognizers()` in
+   [`src/recognizers/__init__.py`](src/recognizers/__init__.py).
+4. Add a replacement factory to `_TYPE_FACTORIES` in
+   [`src/pseudonymizer.py`](src/pseudonymizer.py).
+
+Conflict resolution, run-aware DOCX rewriting, reporting, and the evaluation
+harness are all type-agnostic and pick the new category up automatically.
+
 ## DOCX handling and tradeoffs
 
 Detection operates on reconstructed paragraph/cell text rather than individual
