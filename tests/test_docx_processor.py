@@ -6,19 +6,19 @@ from src.docx_processor import LogicalText, RunSpan, TextReplacement
 
 
 def test_entity_span_maps_across_fragmented_word_runs() -> None:
-    logical = LogicalText.from_run_texts(["Sarthak ", "Malvadkar", " is listed"])
+    logical = LogicalText.from_run_texts(["Devika ", "Senvar", " is listed"])
 
-    assert logical.text == "Sarthak Malvadkar is listed"
-    assert logical.map_span(0, 17) == (
-        RunSpan(run_index=0, start_in_run=0, end_in_run=8),
-        RunSpan(run_index=1, start_in_run=0, end_in_run=9),
+    assert logical.text == "Devika Senvar is listed"
+    assert logical.map_span(0, 13) == (
+        RunSpan(run_index=0, start_in_run=0, end_in_run=7),
+        RunSpan(run_index=1, start_in_run=0, end_in_run=6),
     )
 
 
 def test_cross_run_replacement_preserves_unaffected_text_and_run_count() -> None:
-    logical = LogicalText.from_run_texts(["Contact: Sar", "thak Mal", "vadkar today"])
-    start = logical.text.index("Sarthak")
-    end = start + len("Sarthak Malvadkar")
+    logical = LogicalText.from_run_texts(["Contact: Dev", "ika Sen", "var today"])
+    start = logical.text.index("Devika")
+    end = start + len("Devika Senvar")
 
     rewritten = logical.rewrite_runs([TextReplacement(start, end, "Arjun Mehta")])
 

@@ -22,12 +22,12 @@ def entity(entity_type: PIIType, value: str, start: int = 0) -> PIIEntity:
 def test_unique_local_person_email_match_produces_coherent_replacements() -> None:
     references = (
         EntityReference(
-            "table/r1/c1", "table/r1", entity(PIIType.PERSON, "Rashi Patil")
+            "table/r1/c1", "table/r1", entity(PIIType.PERSON, "Anaya Varman")
         ),
         EntityReference(
             "table/r1/c2",
             "table/r1",
-            entity(PIIType.EMAIL, "rashi.patil@real-company.test"),
+            entity(PIIType.EMAIL, "anaya.varman@fictional-company.test"),
         ),
     )
 
@@ -44,10 +44,10 @@ def test_unique_local_person_email_match_produces_coherent_replacements() -> Non
 
 def test_unmatched_or_ambiguous_email_is_not_forced_into_an_identity() -> None:
     references = (
-        EntityReference("c1", "group", entity(PIIType.PERSON, "Rashi Patil")),
-        EntityReference("c2", "group", entity(PIIType.PERSON, "Rashi P. Patil")),
+        EntityReference("c1", "group", entity(PIIType.PERSON, "Anaya Varman")),
+        EntityReference("c2", "group", entity(PIIType.PERSON, "Anaya P. Varman")),
         EntityReference(
-            "c3", "group", entity(PIIType.EMAIL, "rashi.patil@example.test")
+            "c3", "group", entity(PIIType.EMAIL, "anaya.varman@example.test")
         ),
         EntityReference("c4", "group", entity(PIIType.EMAIL, "support@example.test")),
     )
