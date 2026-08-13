@@ -15,4 +15,4 @@ htmlcov/
 output/*
 !output/.gitkeep
 debug-artifacts/
-
+.claude/
