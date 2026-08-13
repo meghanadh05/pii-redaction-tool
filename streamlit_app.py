@@ -722,6 +722,60 @@ def _render_evaluation() -> None:
     )
 
 
+def _render_upload_and_analyze() -> Any:
+    """Render the single upload control shared by every tab.
+
+    It sits above the tab bar so the primary action is visible from the
+    Overview page onwards, and so only one uploader owns the file state. The
+    accepted upload is returned so later stages can re-read the source bytes
+    without retaining the document in session state.
+    """
+
+    upload = st.file_uploader(
+        "Upload a DOCX document",
+        type=["docx"],
+        accept_multiple_files=False,
+        help="The document to scan for PII. Nothing is stored after processing.",
+    )
+    if upload is None:
+        st.caption(
+            f"Maximum {MAX_UPLOAD_BYTES // 1_048_576} MB. Use synthetic or test "
+            "data — this is a public demo."
+        )
+        return None
+
+    if upload.size > MAX_UPLOAD_BYTES:
+        st.error(
+            f"That file is {upload.size / 1_048_576:.1f} MB. This demo accepts up "
+            f"to {MAX_UPLOAD_BYTES // 1_048_576} MB — run the CLI locally for "
+            "larger documents."
+        )
+        return None
+
+    source_data = upload.getvalue()
+    _reset_for_new_upload(sha256(source_data).hexdigest())
+    st.success(f"Loaded: {upload.name} ({upload.size / 1_048_576:.2f} MB)")
+
+    if st.button("Analyze document", type="primary"):
+        secret = secrets.token_bytes(32)
+        try:
+            with st.spinner("Reconstructing DOCX text and running local detectors…"):
+                analyzed = analyze_upload(
+                    data=source_data,
+                    filename=upload.name,
+                    secret=secret,
+                )
+            st.session_state["analysis"] = analyzed
+            st.session_state["analysis_secret"] = secret
+            st.session_state.pop("redaction", None)
+        except (OSError, ValueError) as error:
+            st.error(f"Could not analyze that document: {error}")
+
+    if _is_analysis_result(st.session_state.get("analysis")):
+        st.caption("Analysis complete — see the **Analyze** tab for detections.")
+    return upload
+
+
 def _reset_for_new_upload(source_sha256: str) -> None:
     if st.session_state.get("active_source_sha256") == source_sha256:
         return
@@ -739,6 +793,8 @@ def main() -> None:
     )
     st.markdown(APP_CSS, unsafe_allow_html=True)
     _render_hero()
+    upload = _render_upload_and_analyze()
+    st.divider()
 
     with st.sidebar:
         st.header("Privacy boundary")
@@ -775,48 +831,17 @@ def main() -> None:
             unsafe_allow_html=True,
         )
 
-    upload = None
     with analyze_tab:
-        st.subheader("Upload and analyze")
-        st.write(
-            "Build a conflict-resolved detection plan first. Analysis does not alter "
-            "or save a redacted document."
-        )
-        upload = st.file_uploader(
-            "Word document (.docx, up to 10 MB)",
-            type=["docx"],
-            accept_multiple_files=False,
-        )
-        if upload is not None:
-            if upload.size > MAX_UPLOAD_BYTES:
-                st.error(
-                    f"That file is {upload.size / 1_048_576:.1f} MB. This demo "
-                    f"accepts up to {MAX_UPLOAD_BYTES // 1_048_576} MB."
-                )
-            else:
-                source_data = upload.getvalue()
-                source_digest = sha256(source_data).hexdigest()
-                _reset_for_new_upload(source_digest)
-                if st.button("Analyze document", type="primary"):
-                    secret = secrets.token_bytes(32)
-                    try:
-                        with st.spinner(
-                            "Reconstructing DOCX text and running local detectors…"
-                        ):
-                            analyzed_result = analyze_upload(
-                                data=source_data,
-                                filename=upload.name,
-                                secret=secret,
-                            )
-                        st.session_state["analysis"] = analyzed_result
-                        st.session_state["analysis_secret"] = secret
-                        st.session_state.pop("redaction", None)
-                    except (OSError, ValueError) as error:
-                        st.error(f"Could not analyze that document: {error}")
-
+        st.subheader("Detection results")
         current_analysis = st.session_state.get("analysis")
         if _is_analysis_result(current_analysis):
             _render_analysis(current_analysis)
+        else:
+            st.info(
+                "Upload a `.docx` above and select **Analyze document** to build a "
+                "conflict-resolved detection plan. Analysis alone never alters or "
+                "saves a document."
+            )
 
     with redact_tab:
         current_analysis = st.session_state.get("analysis")
