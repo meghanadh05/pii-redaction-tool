@@ -1,0 +1,8 @@
+# Runtime dependencies planned for the complete local pipeline.
+python-docx>=1.2,<2
+lxml>=5,<7
+spacy>=3.8.14,<3.9
+Faker>=40,<41
+
+# Test dependency (kept here because the assignment asks for one install file).
+pytest>=8,<10
