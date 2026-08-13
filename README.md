@@ -34,6 +34,11 @@ document text is logged. Each request uses a fresh pseudonymization key, so
 replacements are consistent within one document but not linkable across
 requests.
 
+**Deploying to Streamlit Community Cloud:** select **Python 3.13** under
+_Advanced settings_ before clicking Deploy. spaCy 3.8 publishes no wheels for
+Python 3.14, so the default runtime fails to resolve dependencies, and the
+Python version cannot be changed after an app is created.
+
 ## Installation
 
 Python 3.13 is supported. Create a virtual environment and install the pinned
