@@ -11,6 +11,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ ./src/
 COPY docs/blind_evaluation_15a74a6.json ./docs/blind_evaluation_15a74a6.json
+# The theme lives here; without it the container renders the default light theme.
+COPY .streamlit/ ./.streamlit/
 COPY streamlit_app.py ./
 
 EXPOSE 8501
