@@ -61,13 +61,15 @@ def test_frontend_metrics_come_from_frozen_blind_artifact() -> None:
 def test_streamlit_upload_analyze_redact_verify_download_flow() -> None:
     app = AppTest.from_file(PROJECT_ROOT / "streamlit_app.py", default_timeout=90).run()
     assert not app.exception
-    assert [tab.label for tab in app.tabs] == [
-        "Overview",
-        "Analyze",
-        "Redact",
-        "Verify",
-        "Evaluation",
-    ]
+
+    # The demo is one guided page, not tabs: every stage must be present on load.
+    assert not app.tabs
+    markdown = "\n".join(block.value for block in app.markdown)
+    for heading in ("Upload", "Analyze", "Redact", "Verify output", "Evaluation"):
+        assert heading in markdown
+    # Verification explains itself before there is anything to verify.
+    assert "Verification starts once a document has been redacted" in markdown
+    assert len(app.get("file_uploader")) == 1
 
     cast(Any, app.get("file_uploader")[0]).upload(
         "synthetic-contact.docx",
@@ -92,6 +94,13 @@ def test_streamlit_upload_analyze_redact_verify_download_flow() -> None:
         for metric in app.metric
         if metric.label in {"Replacements", "Cross-run", "Conflicts", "Residual review"}
     }
+    # The waiting state is gone and a real verdict replaced it.
+    redacted_markdown = "\n".join(block.value for block in app.markdown)
+    assert "Verification starts once a document" not in redacted_markdown
+    assert "Redaction verified" in redacted_markdown
+    # Every pipeline pill reports completion in the same run that finished it,
+    # rather than lagging a rerun behind.
+    assert redacted_markdown.count('<span class="stage done">') == 4
     assert verification == {
         "Replacements": "1",
         "Cross-run": "1",

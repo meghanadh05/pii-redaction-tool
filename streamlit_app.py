@@ -68,10 +68,15 @@ APP_CSS = """
         --line: #1E3350;
     }
     .stApp { background: var(--bg); }
-    .block-container { max-width: 1180px; padding-top: 2.2rem; }
+    /* Extra top padding keeps the eyebrow clear of Streamlit's fixed header. */
+    .block-container { max-width: 1180px; padding-top: 3.4rem; }
+    header[data-testid="stHeader"] { background: transparent; }
 
     .kicker { color: var(--accent); font-weight: 700; letter-spacing: .16em;
-        text-transform: uppercase; font-size: .72rem; margin-bottom: .5rem; }
+        text-transform: uppercase; font-size: .78rem; margin-bottom: .55rem; }
+    .section-head { color: var(--ink); font-size: 1.45rem; font-weight: 700;
+        margin: .2rem 0 .2rem; letter-spacing: -.01em; }
+    .section-num { color: var(--accent); font-weight: 800; margin-right: .5rem; }
     .hero-title { color: var(--ink); font-size: 2.7rem; font-weight: 700;
         line-height: 1.1; margin: 0 0 .5rem; letter-spacing: -.02em; }
     .hero-sub { color: var(--ink-dim); font-size: 1.02rem; margin: 0 0 1.1rem;
@@ -83,16 +88,18 @@ APP_CSS = """
         border-radius: 999px; padding: .32rem .8rem; font-size: .78rem;
         color: var(--accent); font-weight: 500; letter-spacing: .01em; }
 
+    .pipeline-label { color: var(--ink-dim); font-size: .7rem; font-weight: 700;
+        letter-spacing: .14em; text-transform: uppercase; margin: .2rem 0 .5rem; }
     .stages { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem;
-        margin: .2rem 0 .4rem; }
-    .stage { display: flex; align-items: center; gap: .45rem; padding: .5rem .9rem;
-        border-radius: 10px; font-size: .84rem; font-weight: 600;
-        border: 1px solid var(--line); background: var(--card); color: var(--ink-dim); }
-    .stage.done { border-color: rgba(34,197,94,.45); color: var(--ok);
-        background: rgba(34,197,94,.08); }
-    .stage.active { border-color: rgba(34,211,238,.55); color: var(--accent);
-        background: rgba(34,211,238,.10); }
-    .stage-arrow { color: var(--line); font-weight: 700; }
+        margin: 0 0 .2rem; }
+    .stage { display: flex; align-items: center; gap: .5rem; padding: .55rem 1.05rem;
+        border-radius: 999px; font-size: .88rem; font-weight: 650;
+        border: 1.5px solid #35507A; background: #16273D; color: #B6C6DC; }
+    .stage.done { border-color: #22C55E; background: #22C55E; color: #04220F; }
+    .stage.active { border-color: #22D3EE; background: #22D3EE; color: #04212B;
+        box-shadow: 0 0 0 4px rgba(34,211,238,.18); }
+    .stage-mark { font-weight: 800; }
+    .stage-arrow { color: #47618C; font-weight: 800; font-size: 1rem; }
 
     .card { padding: 1.15rem 1.25rem; border: 1px solid var(--line);
         border-radius: 14px; background: var(--card); height: 100%; }
@@ -402,14 +409,13 @@ def redact_upload(*, data: bytes, filename: str, secret: bytes) -> RedactionResu
 def _render_hero() -> None:
     st.markdown(
         """
-        <div class="kicker">Privacy engineering demo</div>
+        <div class="kicker">Scaler AI Labs — Assignment</div>
         <div class="hero-title">PII Redaction Tool</div>
         <p class="hero-sub">
           <strong>Structure-aware DOCX processing</strong> ·
           <strong>hybrid validated detection</strong> ·
           <strong>deterministic pseudonymization</strong> ·
-          <strong>post-redaction verification</strong> ·
-          <strong>measured evaluation</strong>
+          <strong>post-redaction verification</strong>
         </p>
         <div class="capabilities">
           <span class="capability">9 PII types</span>
@@ -435,13 +441,49 @@ def _render_stages(*, analyzed: bool, redacted: bool) -> None:
 
     marks = {"done": "✓", "active": "●", "pending": "○"}
     labels = ("Extract", "Detect", "Replace", "Verify")
-    content = '<div class="stages">'
+    content = (
+        '<div class="pipeline-label">Processing pipeline</div><div class="stages">'
+    )
     for index, (label, state) in enumerate(zip(labels, states, strict=True)):
         if index:
             content += '<span class="stage-arrow">→</span>'
         css = "" if state == "pending" else f" {state}"
-        content += f'<span class="stage{css}">{marks[state]} &nbsp;{label}</span>'
+        content += (
+            f'<span class="stage{css}">'
+            f'<span class="stage-mark">{marks[state]}</span>{label}</span>'
+        )
     st.markdown(content + "</div>", unsafe_allow_html=True)
+
+
+def _render_section_head(number: int, title: str) -> None:
+    st.markdown(
+        f'<div class="section-head"><span class="section-num">{number:02d}</span>'
+        f"{title}</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def _render_verification_placeholder() -> None:
+    """Explain what verification does before there is anything to verify."""
+
+    st.markdown(
+        """
+        <div class="card">
+          <div class="card-tag">Waiting for redaction</div>
+          <h3>Verification starts once a document has been redacted</h3>
+          <p>Producing the file is not the last step. Once redaction runs, this
+          section reports what the tool checked on the document it just wrote:</p>
+          <ul style="color:#94A3B8;font-size:.87rem;line-height:1.75;margin:.6rem 0 0">
+            <li>reopen the generated DOCX with a fresh parser</li>
+            <li>validate DOCX/ZIP package integrity</li>
+            <li>verify structure preservation — containers and Word run counts</li>
+            <li>re-scan the output for residual PII</li>
+            <li>report unexplained high-confidence residuals</li>
+          </ul>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def _render_run_explainer() -> None:
@@ -899,7 +941,7 @@ def _render_upload_and_analyze() -> Any:
             st.error(f"Could not analyze that document: {error}")
 
     if _is_analysis_result(st.session_state.get("analysis")):
-        st.caption("Analysis complete — see the **Analyze** tab for detections.")
+        st.caption("Analysis complete — detections are in section 02 below.")
     return upload
 
 
@@ -920,12 +962,12 @@ def main() -> None:
     )
     st.markdown(APP_CSS, unsafe_allow_html=True)
     _render_hero()
-    upload = _render_upload_and_analyze()
-    _render_stages(
-        analyzed=_is_analysis_result(st.session_state.get("analysis")),
-        redacted=_is_redaction_result(st.session_state.get("redaction")),
-    )
+    # Reserved here but filled at the end of the run: analysis and redaction
+    # happen further down the script, so rendering now would show stale state.
+    stages_slot = st.empty()
     st.divider()
+    _render_section_head(1, "Upload")
+    upload = _render_upload_and_analyze()
 
     with st.sidebar:
         st.header("Privacy boundary")
@@ -942,97 +984,101 @@ def main() -> None:
         st.markdown("[Source code](https://github.com/meghanadh05/pii-redaction-tool)")
         st.caption("English/Indian corporate documents are the strongest domain.")
 
-    overview_tab, analyze_tab, redact_tab, verify_tab, evaluation_tab = st.tabs(
-        ["Overview", "Analyze", "Redact", "Verify", "Evaluation"]
-    )
-
-    with overview_tab:
-        _render_run_explainer()
-        st.markdown("&nbsp;", unsafe_allow_html=True)
-        _render_feature_cards()
-        st.markdown("&nbsp;", unsafe_allow_html=True)
-        st.markdown(
-            '<div class="note"><strong>Everything runs locally.</strong> The '
-            "recognizer executes inside this application process — no document "
-            "content reaches an external AI or PII service. Reports contain "
-            "counts, methods, confidence, and verification status, never raw "
-            "detected values.</div>",
-            unsafe_allow_html=True,
+    # A single guided page: the whole demo is understandable by scrolling.
+    _render_section_head(2, "Analyze")
+    current_analysis = st.session_state.get("analysis")
+    if _is_analysis_result(current_analysis):
+        _render_analysis(current_analysis)
+    else:
+        st.info(
+            "Upload a `.docx` above and select **Analyze document** to build a "
+            "conflict-resolved detection plan. Analysis alone never alters or "
+            "saves a document."
         )
-        with st.expander("The full pipeline, stage by stage"):
-            st.markdown(
-                "1. **Extract** — every paragraph, table cell, header, footer, and "
-                "text box becomes an addressable container with its Word runs "
-                "mapped, so a value split across runs is reconstructed.\n"
-                "2. **Detect** — structured recognizers (regex + validators) and "
-                "semantic recognizers (local NER + context rules) propose spans; "
-                "conflicts are resolved deterministically so spans never overlap.\n"
-                "3. **Replace** — each accepted span gets an HMAC-derived synthetic "
-                "value; structured replacements are re-checked by the same "
-                "validators used for detection.\n"
-                "4. **Verify** — the rewritten file is saved atomically, reopened, "
-                "checked for structural equivalence, and re-scanned for residual "
-                "PII before it is offered for download."
-            )
 
-    with analyze_tab:
-        st.subheader("Detection results")
-        current_analysis = st.session_state.get("analysis")
-        if _is_analysis_result(current_analysis):
-            _render_analysis(current_analysis)
-        else:
-            st.info(
-                "Upload a `.docx` above and select **Analyze document** to build a "
-                "conflict-resolved detection plan. Analysis alone never alters or "
-                "saves a document."
-            )
-
-    with redact_tab:
-        current_analysis = st.session_state.get("analysis")
-        if not _is_analysis_result(current_analysis):
-            st.info("Analyze a DOCX first to review its replacement plan.")
-        elif upload is None:
-            st.info("Re-select the analyzed DOCX to continue.")
-        else:
-            _render_preview(current_analysis)
-            conflict_count = int(current_analysis.report.get("conflict_count", 0))
-            if st.button(
-                "Redact and verify DOCX",
-                type="primary",
-                disabled=conflict_count > 0,
-                width="stretch",
-            ):
-                session_secret = st.session_state.get("analysis_secret")
-                if not isinstance(session_secret, bytes):
-                    st.error("The session key expired. Analyze the document again.")
-                else:
-                    try:
-                        with st.spinner(
-                            "Applying replacements, reopening the DOCX, and scanning "
-                            "for residual PII…"
-                        ):
-                            st.session_state["redaction"] = redact_upload(
-                                data=upload.getvalue(),
-                                filename=upload.name,
-                                secret=session_secret,
-                            )
-                        st.success("Redacted document is ready in the Verify tab.")
-                    except RedactionWriteError as error:
-                        st.error(
-                            f"Redaction stopped before output was written: {error}"
+    st.divider()
+    _render_section_head(3, "Redact")
+    current_analysis = st.session_state.get("analysis")
+    if not _is_analysis_result(current_analysis):
+        st.info("Analyze a document first to review its replacement plan.")
+    elif upload is None:
+        st.info("Re-select the analyzed DOCX to continue.")
+    else:
+        _render_preview(current_analysis)
+        conflict_count = int(current_analysis.report.get("conflict_count", 0))
+        if st.button(
+            "Redact and verify DOCX",
+            type="primary",
+            disabled=conflict_count > 0,
+            width="stretch",
+        ):
+            session_secret = st.session_state.get("analysis_secret")
+            if not isinstance(session_secret, bytes):
+                st.error("The session key expired. Analyze the document again.")
+            else:
+                try:
+                    with st.spinner(
+                        "Applying replacements, reopening the DOCX, and scanning "
+                        "for residual PII…"
+                    ):
+                        st.session_state["redaction"] = redact_upload(
+                            data=upload.getvalue(),
+                            filename=upload.name,
+                            secret=session_secret,
                         )
-                    except (OSError, ValueError) as error:
-                        st.error(f"Could not process that document: {error}")
+                except RedactionWriteError as error:
+                    st.error(f"Redaction stopped before output was written: {error}")
+                except (OSError, ValueError) as error:
+                    st.error(f"Could not process that document: {error}")
 
-    with verify_tab:
-        result = st.session_state.get("redaction")
-        if _is_redaction_result(result):
-            _render_verification(result)
-        else:
-            st.info("Redact a document to see integrity and residual-scan results.")
+    st.divider()
+    _render_section_head(4, "Verify output")
+    result = st.session_state.get("redaction")
+    if _is_redaction_result(result):
+        _render_verification(result)
+    else:
+        _render_verification_placeholder()
 
-    with evaluation_tab:
-        _render_evaluation()
+    st.divider()
+    _render_section_head(5, "Evaluation")
+    _render_evaluation()
+
+    st.divider()
+    _render_section_head(6, "Why this is different")
+    _render_run_explainer()
+    st.markdown("&nbsp;", unsafe_allow_html=True)
+    _render_feature_cards()
+    st.markdown("&nbsp;", unsafe_allow_html=True)
+    st.markdown(
+        '<div class="note"><strong>Everything runs locally.</strong> The '
+        "recognizer executes inside this application process — no document "
+        "content reaches an external AI or PII service. Reports contain "
+        "counts, methods, confidence, and verification status, never raw "
+        "detected values.</div>",
+        unsafe_allow_html=True,
+    )
+    with st.expander("The full pipeline, stage by stage"):
+        st.markdown(
+            "1. **Extract** — every paragraph, table cell, header, footer, and "
+            "text box becomes an addressable container with its Word runs "
+            "mapped, so a value split across runs is reconstructed.\n"
+            "2. **Detect** — structured recognizers (regex + validators) and "
+            "semantic recognizers (local NER + context rules) propose spans; "
+            "conflicts are resolved deterministically so spans never overlap.\n"
+            "3. **Replace** — each accepted span gets an HMAC-derived synthetic "
+            "value; structured replacements are re-checked by the same "
+            "validators used for detection.\n"
+            "4. **Verify** — the rewritten file is saved atomically, reopened, "
+            "checked for structural equivalence, and re-scanned for residual "
+            "PII before it is offered for download."
+        )
+
+    # Filled last so the pills reflect work completed during this script run.
+    with stages_slot.container():
+        _render_stages(
+            analyzed=_is_analysis_result(st.session_state.get("analysis")),
+            redacted=_is_redaction_result(st.session_state.get("redaction")),
+        )
 
 
 if __name__ == "__main__":
